@@ -20,7 +20,7 @@ Notes:
 
 from collections.abc import Callable
 from js import EvolveKernel
-from pyodide import createproxy
+from pyodide import create_proxy
 import asyncio
 
 # string callback_proxies and pyfunction in dict , so Garbage collector wont remove them
@@ -141,7 +141,82 @@ class _NET:
 net = _NET()
 
 
+# CALLBACK REGISTRATION
 
+def register_callback(py_fun:Callable)->int:
+    """
+    Registers python function as JS-callable callback
+    """
+    
+    if not callable(py_fun):
+        raise TypeError("register_callback expects a callable function")
+    
+    # create proxy for JS to call python functions
+    # *a- accept any number of arguments
+    # **k- accept any number of keyword arguments
+    # then call _call_python_callback function with these arguments
+    proxy = create_proxy(lambda *a, **k: _call_python_callback(py_fun, a, k))
+    
+    try:
+        res = EvolveKernel.registerCallback(proxy)
+        res_py = _to_py(res)
+        if not res_py.get("ok",False):
+            proxy.destroy()
+            raise RuntimeError(f"registerCallback failed: {res_py.get('error')}")
+        
+        cb_id = int(res_py["value"])
+        _callback_proxies[cb_id] = proxy
+        _callback_pyfuncs[cb_id] = py_fun
+        return cb_id
+    except Exception as e:
+        try:
+            proxy.destroy()
+        except Exception:
+            pass
+        raise e  
+    
+def _call_python_callback(py_fun:Callable,args:tuple, kargs:dict)->any:
+    """
+    JS --> Python callaback handlers
+    """
+    
+    py_args = tuple(_to_py(a) for a in args)
+    py_kargs = {k: _to_py(v) for k,v in kargs.items()}
+    
+    try:
+        result = py_fun(*py_args,**py_kargs)
+        if asyncio.iscoroutine(result):
+            asyncio.ensure_future(result)
+        return result
+    except Exception as e:
+        log("error",f"callback error:{e}")
+        return {"ok":False,"error":str(e)}
+    
+def unregister_callback(cb_id:int)->dict[str,any]:
+    cb_id = int(cb_id)
+    
+    proxy = _callback_proxies.pop(cb_id,None)
+    _callback_pyfuncs.pop(cb_id, None)
+    
+    if proxy:
+        try:
+            proxy.destroy()
+            
+        except Exception:
+            pass
+        
+    try:
+        res = EvolveKernel.unregisterCallback(cb_id)
+        return _to_py(res)
+    except Exception as e:
+        return {"ok": False, "error":str(e)}
+    
+
+
+        
+    
+    
+    
             
     
 
