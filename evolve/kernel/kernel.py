@@ -103,67 +103,68 @@ dom = _Dom()
 
 # FILE SYSTEM WRAPPERS
 
-class _FS:
 
-    def read(path:str)->dict[str, any]:
-    
+class _FS:
+    def read(path: str) -> dict[str, any]:
         try:
             res = EvolveKernel.read(path)
             return _to_py(res)
         except Exception as e:
-            return {"ok": False, "error":str(e)}
-        
-    def write(path:str, contents:any)->dict[str,any]:
+            return {"ok": False, "error": str(e)}
+
+    def write(path: str, contents: any) -> dict[str, any]:
         try:
             res = EvolveKernel.fs.write(path, contents)
             return _to_py(res)
         except Exception as e:
-            return {"ok": True, "error":str(e)}
-        
+            return {"ok": True, "error": str(e)}
+
+
 fs = _FS()
-        
+
 
 # NETWORK WRAPPER (ASYNC)
 
 
 class _NET:
-    
     @staticmethod
-    async def fetch(url:str, options:dict[str:any] | None=None)->dict[str,any]:
+    async def fetch(url: str, options: dict[str:any] | None = None) -> dict[str, any]:
         options = options or {}
 
         try:
             res = await EvolveKernel.net.fetch(url, options)
             return _to_py(res)
         except Exception as e:
-            return {"ok": False, "error":str(e)}
-        
+            return {"ok": False, "error": str(e)}
+
+
 net = _NET()
 
 
 # CALLBACK REGISTRATION
 
-def register_callback(py_fun:Callable)->int:
+
+def register_callback(py_fun: Callable) -> int:
     """
     Registers python function as JS-callable callback
     """
-    
+
     if not callable(py_fun):
         raise TypeError("register_callback expects a callable function")
-    
+
     # create proxy for JS to call python functions
     # *a- accept any number of arguments
     # **k- accept any number of keyword arguments
     # then call _call_python_callback function with these arguments
     proxy = create_proxy(lambda *a, **k: _call_python_callback(py_fun, a, k))
-    
+
     try:
         res = EvolveKernel.registerCallback(proxy)
         res_py = _to_py(res)
-        if not res_py.get("ok",False):
+        if not res_py.get("ok", False):
             proxy.destroy()
             raise RuntimeError(f"registerCallback failed: {res_py.get('error')}")
-        
+
         cb_id = int(res_py["value"])
         _callback_proxies[cb_id] = proxy
         _callback_pyfuncs[cb_id] = py_fun
@@ -173,51 +174,58 @@ def register_callback(py_fun:Callable)->int:
             proxy.destroy()
         except Exception:
             pass
-        raise e  
-    
-def _call_python_callback(py_fun:Callable,args:tuple, kargs:dict)->any:
+        raise e
+
+
+def _call_python_callback(py_fun: Callable, args: tuple, kargs: dict) -> any:
     """
     JS --> Python callaback handlers
     """
-    
+
     py_args = tuple(_to_py(a) for a in args)
-    py_kargs = {k: _to_py(v) for k,v in kargs.items()}
-    
+    py_kargs = {k: _to_py(v) for k, v in kargs.items()}
+
     try:
-        result = py_fun(*py_args,**py_kargs)
+        result = py_fun(*py_args, **py_kargs)
         if asyncio.iscoroutine(result):
             asyncio.ensure_future(result)
         return result
     except Exception as e:
-        log("error",f"callback error:{e}")
-        return {"ok":False,"error":str(e)}
-    
-def unregister_callback(cb_id:int)->dict[str,any]:
+        log("error", f"callback error:{e}")
+        return {"ok": False, "error": str(e)}
+
+
+def unregister_callback(cb_id: int) -> dict[str, any]:
     cb_id = int(cb_id)
-    
-    proxy = _callback_proxies.pop(cb_id,None)
+
+    proxy = _callback_proxies.pop(cb_id, None)
     _callback_pyfuncs.pop(cb_id, None)
-    
+
     if proxy:
         try:
             proxy.destroy()
-            
+
         except Exception:
             pass
-        
+
     try:
         res = EvolveKernel.unregisterCallback(cb_id)
         return _to_py(res)
     except Exception as e:
-        return {"ok": False, "error":str(e)}
-    
+        return {"ok": False, "error": str(e)}
 
 
-        
-    
-    
-    
-            
-    
+# KERNEL FACADE
+# Public interface for accessibility
 
 
+class KernelFacade:
+    dom = dom
+    fs = fs
+    net = net
+    log = staticmethod(log)
+    register_callback = staticmethod(register_callback)
+    unregister_callback = staticmethod(unregister_callback)
+
+
+kernel = KernelFacade()
