@@ -22,6 +22,7 @@ const EvolveKernel = (function () {
   }
 
   // DOM helpers
+  // create dom nodes with specific tags, props and children
   function create(tag, props = {}, children = []) {
     try {
       const el = document.createElement(tag);
@@ -43,6 +44,7 @@ const EvolveKernel = (function () {
     }
   }
 
+  // Apply props to specific node
   function applyProps(el, props) {
     for (const [k,v] of Object.entries(props)) {
       if (k === 'style' && typeof v === 'object') {
@@ -63,12 +65,12 @@ const EvolveKernel = (function () {
       }
     }
   }
-
+  // find the node in existing node registery
   function findNodeId(node) {
     for (const [id, n] of nodes.entries()) if (n === node) return id;
     return null;
   }
-
+  // update props of the node like style
   function update(nodeId, props = {}) {
     const el = nodes.get(nodeId);
     if (!el) return { ok:false, error: 'no-such-node' };
@@ -79,7 +81,7 @@ const EvolveKernel = (function () {
       return { ok:false, error: e.message };
     }
   }
-
+  // Add children to parent node
   function append(parentId, nodeId) {
     const parent = nodes.get(parentId);
     const child = nodes.get(nodeId);
@@ -88,6 +90,7 @@ const EvolveKernel = (function () {
     return { ok:true };
   }
 
+  // for injecting evolve in other html web-pages(eg. through extensions) 
   function query(selector) {
     const el = document.querySelector(selector);
     if (!el) return { ok:true, value: null };
@@ -100,18 +103,19 @@ const EvolveKernel = (function () {
     return { ok:true, value: id };
   }
 
-  // Async/callback bridge
+  // Async/callback bridge , to register a callback function
   function registerCallback(fn) {
     const id = genCallbackId();
     callbacks.set(id, fn);
     return { ok:true, value: id };
   }
 
+  // remove callback function when unused
   function unregisterCallback(id) {
     callbacks.delete(Number(id));
     return { ok:true };
   }
-
+  // async calls to get fully completed and oredictable response for time-consuming tasks
   async function asyncCall(cbId, args = []) {
     const fn = callbacks.get(Number(cbId));
     if (!fn) {
@@ -127,7 +131,7 @@ const EvolveKernel = (function () {
     }
   }
 
-  // FS (simple in-memory for prototype)
+  // FS (simple in-memory for prototype) non-persistent
   const fs = new Map();
   function fs_read(path) {
     return { ok:true, value: fs.get(path) ?? null };
@@ -137,7 +141,8 @@ const EvolveKernel = (function () {
     return { ok:true };
   }
 
-  // net.fetch wrapper
+  // net.fetch wrapper 
+  // any external API request will go through this
   async function net_fetch(url, options = {}) {
     try {
       const res = await fetch(url, options);
@@ -159,6 +164,6 @@ const EvolveKernel = (function () {
   };
 })();
 
-// attach to window
+// attach to window(Global acccess)
 window.EvolveKernel = EvolveKernel;
 console.log('[Kernel] initialized');
