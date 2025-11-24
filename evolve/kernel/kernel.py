@@ -64,6 +64,51 @@ class _Dom:
         except Exception as e:
             return {"ok": False, "error": str(e)}
         
+    @staticmethod
+    def update(nodeID:int, props:dict[str,any] | None=None)->dict[str,any]:
+        
+        props=props or {}
+        try:
+            res=EvolveKernel.dom.update(nodeID,props)
+            return _to_py(res)
+        except Exception as e:
+            return {"ok":False, "error":str(e)}
+        
+    @staticmethod
+    def append(parentID:int, nodeID:int)->dict[str,bool]:
+        try:
+            res = EvolveKernel.dom.append(parentID, nodeID)
+            return _to_py(res)
+        except Exception as e:
+            return {"ok":False, "error": str(e)}
+        
+    @staticmethod
+    def query(selector:str)-> dict[str,any]:
+        
+        try:
+            res = EvolveKernel.dom.query(selector)
+            
+            return _to_py(res)
+        except Exception as e:
+            return {"ok":False, "error":e}
+        
+# exposing public interface as kernel.dom.method instead of kernel._DOM.method 
+# just making it look good
+dom = _Dom()
+
+
+# FILE SYSTEM WRAPPERS
+
+
+
+
+
+
+        
+    
+        
+        
+        
     
             
         
