@@ -17,23 +17,24 @@ Notes:
 - This module expects Pyodide (pyodide.create_proxy) and `window.EvolveKernel` to exist.
 - Keep references to callbacks if you plan to unregister later (this module does that for you).
 """
+
 from collections.abc import Callable
 from js import EvolveKernel
 from pyodide import createproxy
 import asyncio
 
 # string callback_proxies and pyfunction in dict , so Garbage collector wont remove them
-_callback_proxies: dict[int,any] = {}
+_callback_proxies: dict[int, any] = {}
 # reverse mapping fromm callback ID-->callback Function
-_callback_pyfuncs:dict[int,Callable] = {}
+_callback_pyfuncs: dict[int, Callable] = {}
 
-def _to_py(js_value:any) -> any:
-    
+
+def _to_py(js_value: any) -> any:
     """
     Converts JS --> Python for objects that support to_py()
     """
     try:
-        if hasattr(js_value,"to_py"):
+        if hasattr(js_value, "to_py"):
             return js_value.to_py()
     except Exception:
         pass
@@ -42,73 +43,106 @@ def _to_py(js_value:any) -> any:
 
 # LOGGING
 
-def log(level:str, msg:str)->dict[str,any]:
+
+def log(level: str, msg: str) -> dict[str, any]:
     try:
-        
-        res = EvolveKernel.log(level,msg)
+        res = EvolveKernel.log(level, msg)
         return _to_py(res)
     except Exception as e:
-        return{"ok":False, "error":str(e)}
-    
+        return {"ok": False, "error": str(e)}
+
+
 # DOM WRAPPERS
+
 
 class _Dom:
     @staticmethod
-    def create(tag:str, props:dict[str,any] | None = None, children:list[any] | None= None) ->dict[str, any] :
+    def create(
+        tag: str, props: dict[str, any] | None = None, children: list[any] | None = None
+    ) -> dict[str, any]:
         props = props or {}
         children = children or []
-        
+
         try:
             res = EvolveKernel.dom.create(tag, props, children)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
-        
+
     @staticmethod
-    def update(nodeID:int, props:dict[str,any] | None=None)->dict[str,any]:
-        
-        props=props or {}
+    def update(nodeID: int, props: dict[str, any] | None = None) -> dict[str, any]:
+        props = props or {}
         try:
-            res=EvolveKernel.dom.update(nodeID,props)
+            res = EvolveKernel.dom.update(nodeID, props)
             return _to_py(res)
         except Exception as e:
-            return {"ok":False, "error":str(e)}
-        
+            return {"ok": False, "error": str(e)}
+
     @staticmethod
-    def append(parentID:int, nodeID:int)->dict[str,bool]:
+    def append(parentID: int, nodeID: int) -> dict[str, any]:
         try:
             res = EvolveKernel.dom.append(parentID, nodeID)
             return _to_py(res)
         except Exception as e:
-            return {"ok":False, "error": str(e)}
-        
+            return {"ok": False, "error": str(e)}
+
     @staticmethod
-    def query(selector:str)-> dict[str,any]:
-        
+    def query(selector: str) -> dict[str, any]:
         try:
             res = EvolveKernel.dom.query(selector)
-            
+
             return _to_py(res)
         except Exception as e:
-            return {"ok":False, "error":e}
-        
-# exposing public interface as kernel.dom.method instead of kernel._DOM.method 
-# just making it look good
+            return {"ok": False, "error": e}
+
+
+# exposing public interface as kernel.dom.method instead of kernel._DOM.method
+# just making it look good.
 dom = _Dom()
 
 
 # FILE SYSTEM WRAPPERS
 
+class _FS:
 
-
-
-
-
-        
+    def read(path:str)->dict[str, any]:
     
+        try:
+            res = EvolveKernel.read(path)
+            return _to_py(res)
+        except Exception as e:
+            return {"ok": False, "error":str(e)}
         
+    def write(path:str, contents:any)->dict[str,any]:
+        try:
+            res = EvolveKernel.fs.write(path, contents)
+            return _to_py(res)
+        except Exception as e:
+            return {"ok": True, "error":str(e)}
         
+fs = _FS()
         
+
+# NETWORK WRAPPER (ASYNC)
+
+
+class _NET:
     
+    @staticmethod
+    async def fetch(url:str, options:dict[str:any] | None=None)->dict[str,any]:
+        options = options or {}
+
+        try:
+            res = await EvolveKernel.net.fetch(url, options)
+            return _to_py(res)
+        except Exception as e:
+            return {"ok": False, "error":str(e)}
+        
+net = _NET()
+
+
+
             
-        
+    
+
+
