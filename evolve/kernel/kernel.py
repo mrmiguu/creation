@@ -55,5 +55,15 @@ def log(level:str, msg:str)->dict[str,any]:
 class _Dom:
     @staticmethod
     def create(tag:str, props:dict[str,any] | None = None, children:list[any] | None= None) ->dict[str, any] :
+        props = props or {}
+        children = children or []
         
+        try:
+            res = EvolveKernel.dom.create(tag, props, children)
+            return _to_py(res)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        
+    
+            
         
