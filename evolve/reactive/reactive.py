@@ -104,6 +104,41 @@ def signal(initial: any) -> Signal:
 
 # EFFECTS
     
+def effect(fn:Callable[[],any])->Callable[[],None]:
+    """
+    Registers an effect. Effect is run immediately and then on each dependency change.
+    Returns a runner function, so it can be stored or called manually.
+    
+    """
+    if not Callable(fn):
+        raise TypeError("effect expects callable")
+    # Give effect an ID
+    
+    eff_id = next(_id_counter)
+    
+    
+    def runner():
+        
+        try:
+            # mark the runner with __eff_id so signals can register
+            runner.__effect_id = eff_id
+            _current_effect_stack.append(runner)
+            
+            # RUN the effect
+            res = fn()
+            return res
+        finally:
+            _current_effect_stack.pop()
+            # runner.__effect_id remains for subscription identity.
+            
+    # Attach id for removal/inspection
+    runner.__effect_id = eff_id
+    # Run immediately to collect depedencies
+    runner()
+    return runner
+
+
+    
     
     
     
