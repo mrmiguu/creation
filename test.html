@@ -1,35 +1,102 @@
-<!doctype html>
-<html>
-  <head><meta charset="utf-8"><title>Kernel test</title></head>
-  <body>
-    <div id="app"></div>
-    <script src="./evolve/kernel/index.js"></script>
-    <script>
-      (async () => {
-        const k = window.EvolveKernel;
-        k.log('info', 'starting test');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Evolve — WASM Test Lab</title>
 
-        // create a div
-        const r1 = k.dom.create('div', { id: 'myDiv', textContent: 'hello kernel' });
-        
-        const nodeId = r1.value;
-        // append to #app
-        const q = k.dom.query('#app');
-        const appId = q.value;
-        if (appId) {
-          k.dom.append(appId, nodeId);
-        } else {
-          // fallback: append directly to body
-          document.body.appendChild(document.getElementById('app'));
-          k.dom.append(appId, nodeId);
-        }
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js"></script>
 
-        // callback demo
-        const cb = (ev) => { k.log('info', 'event received: ' + JSON.stringify(ev)); };
-        const reg = k.registerCallback(cb);
-        const cbId = reg.value;
-        k.dom.update(nodeId, { onclick: String(cbId) }); // attach click
-      })();
-    </script>
-  </body>
+  <style>
+    body {
+      background: #0d1117;
+      color: #c9d1d9;
+      font-family: Arial, monospace;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #58a6ff;
+    }
+
+    #status {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .status-item {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #161b22;
+    }
+
+    .pass { color: #3fb950; }
+    .fail { color: #f85149; }
+
+    #app {
+      margin-top: 30px;
+      padding: 16px;
+      border-radius: 12px;
+      background: #161b22;
+    }
+
+    button {
+      background: #238636;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    button:hover {
+      background: #2ea043;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🧪 Evolve — WASM Torture Lab</h1>
+
+  <div id="status"></div>
+
+  <div id="app"></div>
+
+<script>
+  async function loadWASM() {
+    const pyodide = await loadPyodide();
+
+    // Fetch all 3 needed files
+    const evolveInit = await fetch("/evolve/__init__.py").then(r => r.text());
+    const domInit = await fetch("/evolve/dom/__init__.py").then(r => r.text());
+    const dom = await fetch("/evolve/dom/dom.py").then(r => r.text());
+
+    // Create structure in Pyodide FS
+    pyodide.FS.mkdir("/evolve");
+    pyodide.FS.mkdir("/evolve/dom");
+
+    // Write files
+    pyodide.FS.writeFile("/evolve/__init__.py", evolveInit);
+    pyodide.FS.writeFile("/evolve/dom/__init__.py", domInit);
+    pyodide.FS.writeFile("/evolve/dom/dom.py", dom);
+
+    // Now load wasm-test
+    const response = await fetch("/wasm-test/wasm-test.py");
+    const code = await response.text();
+
+    try {
+      await pyodide.runPythonAsync(code);
+    } catch (err) {
+      console.error("❌ PYTHON ERROR:", err);
+    }
+  }
+
+  loadWASM();
+</script>
+
+
+</body>
 </html>
