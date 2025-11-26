@@ -27,10 +27,10 @@ def _is_element(x: Any) -> bool:
     return isinstance(x, Element)
 
 def _ensure_element(x: Any) -> Element:
-    # If user returns a primitive, wrap it in a span
+    # If user returns a primitive, wrap it in div
     if _is_element(x):
         return x
-    return div(x)  # wrap primitive in a div/span (div used for simplicity)
+    return div(x)  # wrap primitive in a div
 
 
 #   ComponentInstance  
@@ -52,6 +52,8 @@ class ComponentInstance:
         self._mounted_child: Element | None = None
         self._render_runner = None  # effect runner for reactive re-rendering
         self._is_mounted = False
+        self._container_id: int | None = None
+
 
     # create an effect that re-renders when dependencies change
     def _render_effect(self):
@@ -104,7 +106,7 @@ class ComponentInstance:
         # If nothing mounted earlier: simply append
         if self._mounted_child is None:
             nid = new_elem._build()
-            kernel.dom.append(self.container._build(), nid)
+            kernel.dom.append(self._container_id, nid)
             self._mounted_child = new_elem
             return
 
@@ -137,7 +139,7 @@ class ComponentInstance:
 
         # Now append new
         new_id = new_elem._build()
-        kernel.dom.append(self.container._build(), new_id)
+        kernel.dom.append(self._container_id, new_id)
         self._mounted_child = new_elem
 
     def unmount(self):
@@ -149,8 +151,9 @@ class ComponentInstance:
             # attempt to remove container DOM node itself
             if self.container.node_id is not None:
                 try:
-                    if hasattr(kernel.dom, "remove"):
-                        kernel.dom.remove(self.container.node_id)
+                    
+                    if self._container_id is not None:
+                        kernel.dom.remove(self._container_id)
                     else:
                         kernel.dom.update(self.container.node_id, {"style": {"display": "none"}})
                 except Exception:
