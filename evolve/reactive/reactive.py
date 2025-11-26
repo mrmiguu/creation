@@ -4,7 +4,7 @@ Push-based dependency tracking similar to Solid.js.
 
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Any
 import itertools
 import traceback
 
@@ -25,21 +25,21 @@ class Signal:
 
     __slots__ = ("_id", "_value", "_subscribers")
 
-    def __init__(self, intial: any):
+    def __init__(self, intial: Any):
         self._id: int = next(_id_counter)
-        self._value: any = intial
-        self._subscribers: dict[int, Callable[[any], None]] = {}
+        self._value: Any = intial
+        self._subscribers: dict[int, Callable[[Any], None]] = {}
 
     # reading the signal registers dependency if inside an effect
-    def __call__(self, *args, **kwds) -> any:
+    def __call__(self, *args, **kwds) -> Any:
         self._track_dependency()
         return self._value
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         return self.__call__()
 
-    def set(self, new: any) -> None:
+    def set(self, new: Any) -> None:
         # short circuit if equal (fast path) using python equality
         if new == self._value:
             return
@@ -81,7 +81,7 @@ class Signal:
         # attch it to eff_id so that we can remove it later if needed
         self._subscribers[eff_id] = _subscriber
 
-    def subscribe(self, fn: Callable[[any], None]) -> int:
+    def subscribe(self, fn: Callable[[Any], None]) -> int:
         """
 
         subscribe directly to changes. Returns subscription id
@@ -97,7 +97,7 @@ class Signal:
         return f"<Signal id={self._id} value={self._value!r} subs={len(self._subscribers)}>"
 
 
-def signal(initial: any) -> Signal:
+def signal(initial: Any) -> Signal:
     """Factory for signals."""
     return Signal(initial)
 
@@ -105,7 +105,7 @@ def signal(initial: any) -> Signal:
 # EFFECTS
 
 
-def effect(fn: Callable[[], any]) -> Callable[[], None]:
+def effect(fn: Callable[[], Any]) -> Callable[[], None]:
     """
     Registers an effect. Effect is run immediately and then on each dependency change.
     Returns a runner function, so it can be stored or called manually.
@@ -148,14 +148,14 @@ class Computed:
 
     __slots__ = ("_fn", "_id", "_value", "_subscribers")
 
-    def __init__(self, fn: Callable[[], any]):
+    def __init__(self, fn: Callable[[], Any]):
         if not callable(fn):
             raise TypeError("Compute requires callable")
 
         self._fn = fn
-        self._value: any = None
+        self._value: Any = None
         self._id = next(_id_counter)
-        self._subscribers: dict[int, Callable[[any], None]] = {}
+        self._subscribers: dict[int, Callable[[Any], None]] = {}
 
         # internal effect to change computed value when dependencies change
 
@@ -179,7 +179,7 @@ class Computed:
         # compute intial value
         # _update runs as a part of effect call
 
-    def __call__(self) -> any:
+    def __call__(self) -> Any:
         # allow effects to subscribe to computed too
         if _current_effect_stack:
             eff = _current_effect_stack[-1]
@@ -199,7 +199,7 @@ class Computed:
         return self._value
 
     @property
-    def value(self) -> any:
+    def value(self) -> Any:
         return self.__call__()
 
     def subscribe(self, fn: Callable[[Any], None]) -> int:
@@ -214,5 +214,5 @@ class Computed:
         return f"<Computed id={self._id} value={self._value!r} subs={len(self._subscribers)}>"
 
 
-def computed(fn: Callable[[], any]) -> Computed:
+def computed(fn: Callable[[], Any]) -> Computed:
     return Computed(fn)

@@ -18,18 +18,18 @@ Notes:
 - Keep references to callbacks if you plan to unregister later (this module does that for you).
 """
 
-from collections.abc import Callable
+from typing import Any, Callable
 from js import EvolveKernel
 from pyodide import create_proxy
 import asyncio
 
 # string callback_proxies and pyfunction in dict , so Garbage collector wont remove them
-_callback_proxies: dict[int, any] = {}
+_callback_proxies: dict[int, Any] = {}
 # reverse mapping fromm callback ID-->callback Function
 _callback_pyfuncs: dict[int, Callable] = {}
 
 
-def _to_py(js_value: any) -> any:
+def _to_py(js_value: Any) -> Any:
     """
     Converts JS --> Python for objects that support to_py()
     """
@@ -44,7 +44,7 @@ def _to_py(js_value: any) -> any:
 # LOGGING
 
 
-def log(level: str, msg: str) -> dict[str, any]:
+def log(level: str, msg: str) -> dict[str, Any]:
     try:
         res = EvolveKernel.log(level, msg)
         return _to_py(res)
@@ -58,8 +58,7 @@ def log(level: str, msg: str) -> dict[str, any]:
 class _Dom:
     @staticmethod
     def create(
-        tag: str, props: dict[str, any] | None = None, children: list[any] | None = None
-    ) -> dict[str, any]:
+        tag: str, props: dict[str, Any] | None = None, children: list[Any] | None = None) -> dict[str, Any]:
         props = props or {}
         children = children or []
 
@@ -68,9 +67,17 @@ class _Dom:
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
+        
+    @staticmethod
+    def remove(node_id: int) -> dict[str, Any]:
+        try:
+            res = EvolveKernel.dom.remove(int(node_id))
+            return _to_py(res)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
 
     @staticmethod
-    def update(nodeID: int, props: dict[str, any] | None = None) -> dict[str, any]:
+    def update(nodeID: int, props: dict[str, Any] | None = None) -> dict[str, Any]:
         props = props or {}
         try:
             res = EvolveKernel.dom.update(nodeID, props)
@@ -79,7 +86,7 @@ class _Dom:
             return {"ok": False, "error": str(e)}
 
     @staticmethod
-    def append(parentID: int, nodeID: int) -> dict[str, any]:
+    def append(parentID: int, nodeID: int) -> dict[str, Any]:
         try:
             res = EvolveKernel.dom.append(parentID, nodeID)
             return _to_py(res)
@@ -87,13 +94,13 @@ class _Dom:
             return {"ok": False, "error": str(e)}
 
     @staticmethod
-    def query(selector: str) -> dict[str, any]:
+    def query(selector: str) -> dict[str, Any]:
         try:
             res = EvolveKernel.dom.query(selector)
 
             return _to_py(res)
         except Exception as e:
-            return {"ok": False, "error": e}
+            return {"ok": False, "error": str(e)}
 
 
 # exposing public interface as kernel.dom.method instead of kernel._DOM.method
@@ -105,19 +112,22 @@ dom = _Dom()
 
 
 class _FS:
-    def read(path: str) -> dict[str, any]:
+    
+    @staticmethod
+    def read(path: str) -> dict[str, Any]:
         try:
-            res = EvolveKernel.read(path)
+            res = EvolveKernel.fs.read(path)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    def write(path: str, contents: any) -> dict[str, any]:
+    @staticmethod
+    def write(path: str, contents: Any) -> dict[str, Any]:
         try:
             res = EvolveKernel.fs.write(path, contents)
             return _to_py(res)
         except Exception as e:
-            return {"ok": True, "error": str(e)}
+            return {"ok": False, "error": str(e)}
 
 
 fs = _FS()
@@ -128,7 +138,7 @@ fs = _FS()
 
 class _NET:
     @staticmethod
-    async def fetch(url: str, options: dict[str:any] | None = None) -> dict[str, any]:
+    async def fetch(url: str, options: dict[str,Any] | None = None) -> dict[str, Any]:
         options = options or {}
 
         try:
@@ -153,8 +163,8 @@ def register_callback(py_fun: Callable) -> int:
         raise TypeError("register_callback expects a callable function")
 
     # create proxy for JS to call python functions
-    # *a- accept any number of arguments
-    # **k- accept any number of keyword arguments
+    # *a- accept Any number of arguments
+    # **k- accept Any number of keyword arguments
     # then call _call_python_callback function with these arguments
     proxy = create_proxy(lambda *a, **k: _call_python_callback(py_fun, a, k))
 
@@ -177,7 +187,7 @@ def register_callback(py_fun: Callable) -> int:
         raise e
 
 
-def _call_python_callback(py_fun: Callable, args: tuple, kargs: dict) -> any:
+def _call_python_callback(py_fun: Callable, args: tuple, kargs: dict) -> Any:
     """
     JS --> Python callaback handlers
     """
@@ -195,7 +205,7 @@ def _call_python_callback(py_fun: Callable, args: tuple, kargs: dict) -> any:
         return {"ok": False, "error": str(e)}
 
 
-def unregister_callback(cb_id: int) -> dict[str, any]:
+def unregister_callback(cb_id: int) -> dict[str, Any]:
     cb_id = int(cb_id)
 
     proxy = _callback_proxies.pop(cb_id, None)

@@ -1,6 +1,6 @@
-// kernel/index.js
-// Minimal Evolve Kernel — exposes APIs to WASM / Python.
-// Attach to window.EvolveKernel
+
+// Minimal Evolve Kernel - exposes APIs to WASM / Python.
+// Attached to window.EvolveKernel
 
 const EvolveKernel = (function () {
   // internal node registry (maps nodeId -> DOM node)
@@ -33,6 +33,7 @@ const EvolveKernel = (function () {
       applyProps(el, props);
       const id = genNodeId();
       nodes.set(id, el);
+      el.__evolve_id = id
       // attach children if any (children can be nodeIds or strings)
       for (const child of children) {
         if (typeof child === "number") {
@@ -47,6 +48,41 @@ const EvolveKernel = (function () {
       return { ok: false, error: e.message };
     }
   }
+
+  function remove(nodeID) {
+    try {
+      const node = nodes.get(nodeID)
+
+      if (!node) {
+        return { ok: false, error: "Node not found" }
+      }
+
+      // Recursively remove children first (using DOM tree)
+      const children = Array.from(node.children || [])
+      for (const child of children) {
+        const childId = findNodeId(child)
+        if (childId) {
+          remove(childId)
+        } else {
+          child.remove() // orphan case
+        }
+      }
+
+      // Remove from real DOM
+      if (node.parentNode) {
+        node.parentNode.removeChild(node)
+      }
+
+      // Remove from registry
+      nodes.delete(nodeID)
+
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: e.message }
+    }
+  }
+
+
 
   // Apply props to specific node
   function applyProps(el, props) {
@@ -71,8 +107,7 @@ const EvolveKernel = (function () {
   }
   // find the node in existing node registery
   function findNodeId(node) {
-    for (const [id, n] of nodes.entries()) if (n === node) return id;
-    return null;
+     return node.__evolve_id || null
   }
   // update props of the node like style
   function update(nodeId, props = {}) {
@@ -85,14 +120,20 @@ const EvolveKernel = (function () {
       return { ok: false, error: e.message };
     }
   }
+
   // Add children to parent node
   function append(parentId, nodeId) {
-    const parent = nodes.get(parentId);
-    const child = nodes.get(nodeId);
-    if (!parent || !child) return { ok: false, error: "invalid-node" };
-    parent.appendChild(child);
-    return { ok: true };
+    const parent = nodes.get(parentId)
+    const child = nodes.get(nodeId)
+
+    if (!parent || !child) return { ok: false, error: "invalid-node" }
+
+    parent.appendChild(child)
+    child.__evolve_parent = parentId
+
+    return { ok: true }
   }
+
 
   // for injecting evolve in other html web-pages(eg. through extensions)
   function query(selector) {
@@ -104,10 +145,13 @@ const EvolveKernel = (function () {
         // register external node
         const nid = genNodeId();
         nodes.set(nid, el);
+        el.__evolve_id = nid
         return nid;
       })();
     return { ok: true, value: id };
   }
+
+  
 
   // Async/callback bridge , to register a callback function
   function registerCallback(fn) {
@@ -170,7 +214,7 @@ const EvolveKernel = (function () {
   // Public API
   return {
     log,
-    dom: { create, update, append, query },
+    dom: { create,remove, update, append, query },
     registerCallback,
     unregisterCallback,
     asyncCall,
