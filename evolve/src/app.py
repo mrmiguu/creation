@@ -1,6 +1,5 @@
 from .router import Router
 
-
 def start(host="0.0.0.0", port=3000, dev=True, reload=True):
 
     """
