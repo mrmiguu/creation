@@ -151,6 +151,44 @@ class _NET:
 net = _NET()
 
 
+# LOCATION / HISTORY WRAPPER
+
+class _Location:
+
+    @staticmethod
+    def get_path() -> str:
+        try:
+            return _to_py(EvolveKernel.location.getPath())
+        except Exception:
+            return "/"
+
+    @staticmethod
+    def push(path: str) -> dict[str, Any]:
+        try:
+            return _to_py(EvolveKernel.location.push(path))
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    @staticmethod
+    def replace(path: str) -> dict[str, Any]:
+        try:
+            return _to_py(EvolveKernel.location.replace(path))
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    @staticmethod
+    def on_change(py_callback: Callable) -> dict[str, Any]:
+        """
+        Registers a python function to be called on browser popstate
+        """
+        try:
+            cb_id = register_callback(py_callback)
+            return _to_py(EvolveKernel.location.onChange(cb_id))
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+location = _Location()
+
 # CALLBACK REGISTRATION
 
 
@@ -233,6 +271,7 @@ class KernelFacade:
     dom = dom
     fs = fs
     net = net
+    location = location
     log = staticmethod(log)
     register_callback = staticmethod(register_callback)
     unregister_callback = staticmethod(unregister_callback)

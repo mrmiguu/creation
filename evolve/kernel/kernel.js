@@ -211,10 +211,61 @@ const EvolveKernel = (function () {
     }
   }
 
+
+  // for accessng window functions
+  const location = {
+    getPath() {
+      return window.location.pathname;
+    },
+
+    push(path) {
+      if (typeof path !== "string") {
+        return { ok: false, error: "path must be string" };
+      }
+      window.history.pushState({}, "", path);
+      return { ok: true };
+    },
+
+    replace(path) {
+      if (typeof path !== "string") {
+        return { ok: false, error: "path must be string" };
+      }
+      window.history.replaceState({}, "", path);
+      return { ok: true };
+    },
+
+    onChange(cbId) {
+      const id = Number(cbId);
+
+      if (!callbacks.has(id)) {
+        return { ok: false, error: "Callback not found" };
+      }
+
+      window.addEventListener("popstate", () => {
+        const fn = callbacks.get(id);
+        if (fn) fn();
+      });
+
+      return { ok: true };
+    },
+    forward() {
+      window.history.forward();
+      return { ok: true };
+    },
+
+    back() {
+      window.history.back();
+      return { ok: true };
+    }
+
+};
+
+
   // Public API
   return {
     log,
     dom: { create,remove, update, append, query },
+    location,
     registerCallback,
     unregisterCallback,
     asyncCall,
