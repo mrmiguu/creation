@@ -11,7 +11,61 @@ from typing import Callable, Any
 import re
 from ..components.component import ComponentInstance
 from kernel.kernel import kernel
-from dom.dom import div
+from dom.dom import div, Element
+
+
+from .html import _flatten_children, _normalize_props, a
+
+def Link(to: str, *children, **props) -> Element:
+    """
+    Link("/path", child1, child2, ..., tw("..."), class_="...")
+
+    Behaves like <a>, but prevents default navigation and uses router.navigate().
+    """
+    from .router import navigate  # local import to avoid circular
+
+    # Flatten children (Card(...), "Text", tw(...))
+    flat = _flatten_children(children)
+
+    # Extract tw() style dicts or other dict children
+    final_children = []
+    tw_style = {}
+
+    for ch in flat:
+        # tw() children are dicts with __tw_style__
+        if isinstance(ch, dict) and "__tw_style__" in ch:
+            tw_style.update(ch["__tw_style__"])
+        else:
+            final_children.append(ch)
+
+    # Normalize standard props (class_, data_*, etc.)
+    norm = _normalize_props(props)
+
+    # Merge tw style
+    if tw_style:
+        if "style" in norm and isinstance(norm["style"], dict):
+            norm["style"] = {**norm["style"], **tw_style}
+        else:
+            norm["style"] = tw_style
+
+    # Add the link href (for SEO, middle-click, long press on mobile)
+    norm["href"] = to
+
+    # Add the on_click handler
+    def _on_click(ev):
+        # prevent default browser navigation
+        try:
+            ev.preventDefault()
+        except Exception:
+            pass
+
+        # SPA navigation
+        navigate(to)
+
+    norm["on_click"] = _on_click
+
+    # Return a standard <a> element
+    return a(*final_children, **norm)
 
 #  ROUTE REGISTRY
 
@@ -80,7 +134,7 @@ class Router:
     
     @staticmethod
     def instance():
-        if Router._instance==None:
+        if Router._instance is None:
             Router._instance = Router()
             
             return Router._instance
@@ -158,6 +212,7 @@ class Router:
             
         # mount_new
         comp_inst.container._build()
+        kernel.dom.remove(self.root_id)
         kernel.dom.append(self.root_id,comp_inst.container.node_id)
         self.current_component = comp_inst
         
