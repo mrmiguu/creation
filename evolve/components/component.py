@@ -14,6 +14,8 @@ from ..dom.dom import Element, div
 from ..kernel.kernel import kernel
 from ..reactive.reactive import effect
 from ..core.lifecycle import push_component, pop_component
+from ..context.context import ProviderWrapper
+from ..context import _CONTEXTS as _CONTEXT_STACKS
 from ..diff.keyed import reconcile
 import functools
 import inspect
@@ -61,10 +63,37 @@ class ComponentInstance:
         push_component(self)
 
         try:
-            if self._accepts_props():
-                out = self.fn(self.props, *self.children)
+            # Support ProviderWrapper
+            if isinstance(self.fn, ProviderWrapper):
+                ctx = self.fn.ctx
+                val = self.fn.value
+
+                # push value
+                stack = _CONTEXT_STACKS[ctx._key]
+                stack.append(val)
+
+                try:
+                    out = div(*self.fn.children)
+                finally:
+                    stack.pop()
+
             else:
-                out = self.fn(*self.children)
+                try:
+                    if self._accepts_props():
+                        out = self.fn(self.props, *self.children)
+                    else:
+                        out = self.fn(*self.children)
+                except Exception as e:
+                    # Check if parent is an ErrorBoundaryWrapper
+                    # NOTE: fn may be a ProviderWrapper or a plain function, but ErrorBoundaryWrapper has `_error_signal`
+                    if hasattr(self.fn, "_error_signal"):
+                        self.fn._error_signal.set(e)
+                        out = self.fn.fallback(e)
+                    else:
+                        # no boundary above → full crash (or later we can add global handler)
+                        raise
+
+
         finally:
             pop_component()
 
