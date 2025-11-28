@@ -75,6 +75,18 @@ class _Dom:
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
+        
+    @staticmethod
+    def insert_at(parentID: int, nodeID: int, index: int) -> dict[str, Any]:
+        """
+        Insert nodeID as a child of parentID at the given index.
+        Expects the JS kernel to provide dom.insertAt(parentId, nodeId, index).
+        """
+        try:
+            res = EvolveKernel.dom.insertAt(int(parentID), int(nodeID), int(index))
+            return _to_py(res)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
 
     @staticmethod
     def update(nodeID: int, props: dict[str, Any] | None = None) -> dict[str, Any]:

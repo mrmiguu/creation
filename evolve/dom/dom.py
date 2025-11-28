@@ -29,6 +29,8 @@ class Element:
             tuple[Signal | Computed, int]
         ] = []  # (signal, sub_id)
         self._mounted: bool = False
+        self.key = props.pop("key", None)
+
 
     #
     # Internal helper: create child node for Signal/Computed

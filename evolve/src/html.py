@@ -139,6 +139,9 @@ def _make_factory(tag: str):
         flat = _flatten_children(children)
         norm_props = _normalize_props(props)
 
+        # Extract key (NOT a DOM prop)
+        key = norm_props.pop("key", None)
+
         # merge tw() styles if present
         tw_style: dict[str, str] = {}
         new_children: list[Any] = []
@@ -150,17 +153,23 @@ def _make_factory(tag: str):
                 new_children.append(c)
 
         if tw_style:
-            # merge with existing styles if provided
             if "style" in norm_props and isinstance(norm_props["style"], dict):
                 merged = {**norm_props["style"], **tw_style}
                 norm_props["style"] = merged
             else:
                 norm_props["style"] = tw_style
 
-        return _dom._make_element(tag, *new_children, **norm_props)
+        # Create Element
+        elem = _dom._make_element(tag, *new_children, **norm_props)
+
+        # Assign key for keyed diffing
+        elem.key = key
+
+        return elem
 
     factory.__name__ = tag
     return factory
+
 
 
 # create all HTML tag functions

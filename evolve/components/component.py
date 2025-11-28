@@ -14,6 +14,7 @@ from ..dom.dom import Element, div
 from ..kernel.kernel import kernel
 from ..reactive.reactive import effect
 from ..core.lifecycle import push_component, pop_component
+from ..diff.keyed import reconcile
 import functools
 import inspect
 
@@ -48,6 +49,10 @@ class ComponentInstance:
     # EFFECT: called whenever dependencies change
     #    
     def _render_effect(self):
+        
+        if self._is_mounted is False and self._container_id is not None:
+        # if unmounted , skip
+            return
         push_component(self)
 
         try:
@@ -65,9 +70,11 @@ class ComponentInstance:
     def _accepts_props(self) -> bool:
         try:
             sig = inspect.signature(self.fn)
-            return "props" in sig.parameters
-        except:
+            # accept if function takes >=1 positional or keyword-only parameter
+            return len(sig.parameters) >= 1
+        except Exception:
             return False
+
 
 
     #    
@@ -111,7 +118,66 @@ class ComponentInstance:
             self._mounted_child = new_elem
             return
 
-        # diff: full replace (simple strategy)
+        # If both are Elements with children lists → attempt keyed reconciliation
+        if (
+            isinstance(self._mounted_child, Element) and
+            isinstance(new_elem, Element) and
+            isinstance(self._mounted_child.children, list) and
+            isinstance(new_elem.children, list)
+        ):
+            # Ensure children are Element instances (wrap primitives)
+            def _ensure_list_of_elements(lst):
+                out: list[Element] = []
+                for ch in lst:
+                    if isinstance(ch, Element):
+                        out.append(ch)
+                    else:
+                        # convert primitive or other into Element via _ensure_element
+                        out.append(_ensure_element(ch))
+                return out
+
+            old_children = _ensure_list_of_elements(self._mounted_child.children)
+            new_children = _ensure_list_of_elements(new_elem.children)
+
+            # reconcile returns a list of Element instances in final DOM order
+            new_order = reconcile(self._container_id, old_children, new_children)
+
+            # attach the new ordered children to the mounted element so future diffs use correct structure
+            self._mounted_child.children = new_order
+
+            # if the element identity (tag/props) changed we should still replace the whole node.
+            # To keep it simple: if tags differ, fallback to full replace
+            if getattr(self._mounted_child, "tag", None) != getattr(new_elem, "tag", None):
+                # full replace fallback
+                old = self._mounted_child
+                old_node_id = old.node_id
+                try:
+                    old.unmount()
+                except Exception:
+                    kernel.log("error", "error during unmount of previous element")
+                if old_node_id is not None:
+                    try:
+                        if hasattr(kernel.dom, "remove"):
+                            kernel.dom.remove(old_node_id)
+                        else:
+                            kernel.dom.update(old_node_id, {"style": {"display": "none"}})
+                    except Exception:
+                        pass
+                new_id = new_elem._build()
+                kernel.dom.append(self._container_id, new_id)
+                self._mounted_child = new_elem
+            else:
+                # Keep mounted element but update its props if any changed.
+                # For simplicity we can update attributes by calling dom.update with new_elem.props
+                try:
+                    if getattr(new_elem, "props", None):
+                        kernel.dom.update(self._mounted_child.node_id, new_elem.props)
+                except Exception:
+                    pass
+
+            return
+
+        #  FULL REPLACE PATH 
         old = self._mounted_child
         old_node_id = old.node_id
 
@@ -135,6 +201,7 @@ class ComponentInstance:
         new_id = new_elem._build()
         kernel.dom.append(self._container_id, new_id)
         self._mounted_child = new_elem
+
 
     #    
     # Unmount Component

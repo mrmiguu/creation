@@ -82,6 +82,29 @@ const EvolveKernel = (function () {
     }
   }
 
+  function insertAt(parentId, nodeId, index) {
+    try {
+      const parent = nodes.get(parentId);
+      const child = nodes.get(nodeId);
+
+      if (!parent || !child) {
+        return { ok: false, error: "insertAt: invalid-node" };
+      }
+
+      // clamp index
+      const children = parent.childNodes;
+      const refNode = (index >= 0 && index < children.length)
+        ? children[index]
+        : null;
+
+      parent.insertBefore(child, refNode);
+      child.__evolve_parent = parentId;
+
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  }
 
 
   // Apply props to specific node
@@ -264,7 +287,7 @@ const EvolveKernel = (function () {
   // Public API
   return {
     log,
-    dom: { create,remove, update, append, query },
+    dom: { create,remove,insertAt, update, append, query },
     location,
     registerCallback,
     unregisterCallback,
