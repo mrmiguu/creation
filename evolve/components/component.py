@@ -22,6 +22,7 @@ import inspect
 def _is_element(x: Any) -> bool:
     return isinstance(x, Element)
 
+
 def _ensure_element(x: Any) -> Element:
     if _is_element(x):
         return x
@@ -29,7 +30,12 @@ def _ensure_element(x: Any) -> Element:
 
 
 class ComponentInstance:
-    def __init__(self, fn: Callable[..., Any], props: dict[str, Any] | None = None, children: list[Any] | None = None):
+    def __init__(
+        self,
+        fn: Callable[..., Any],
+        props: dict[str, Any] | None = None,
+        children: list[Any] | None = None,
+    ):
         self.fn = fn
         self.props = props or {}
         self.children = children or []
@@ -45,13 +51,12 @@ class ComponentInstance:
         self._is_mounted = False
         self._container_id: int | None = None
 
-    #    
+    #
     # EFFECT: called whenever dependencies change
-    #    
+    #
     def _render_effect(self):
-        
         if self._is_mounted is False and self._container_id is not None:
-        # if unmounted , skip
+            # if unmounted , skip
             return
         push_component(self)
 
@@ -66,7 +71,6 @@ class ComponentInstance:
         new_elem = _ensure_element(out)
         self._apply_rendered(new_elem)
 
-
     def _accepts_props(self) -> bool:
         try:
             sig = inspect.signature(self.fn)
@@ -75,11 +79,9 @@ class ComponentInstance:
         except Exception:
             return False
 
-
-
-    #    
+    #
     # Mount Component to DOM
-    #    
+    #
     def mount_to(self, parent_selector: str = "body"):
         parent_q = kernel.dom.query(parent_selector)
         if not parent_q.get("ok"):
@@ -98,18 +100,18 @@ class ComponentInstance:
 
         self._is_mounted = True
 
-        #  
+        #
         # RUN on_mount callbacks
-        #  
+        #
         for fn in self._mount_callbacks:
             try:
                 fn()
             except Exception as e:
                 kernel.log("error", f"on_mount error: {e}")
 
-    #    
+    #
     # Replace old DOM with new rendered DOM
-    #    
+    #
     def _apply_rendered(self, new_elem: Element):
         # first render
         if self._mounted_child is None:
@@ -120,10 +122,10 @@ class ComponentInstance:
 
         # If both are Elements with children lists → attempt keyed reconciliation
         if (
-            isinstance(self._mounted_child, Element) and
-            isinstance(new_elem, Element) and
-            isinstance(self._mounted_child.children, list) and
-            isinstance(new_elem.children, list)
+            isinstance(self._mounted_child, Element)
+            and isinstance(new_elem, Element)
+            and isinstance(self._mounted_child.children, list)
+            and isinstance(new_elem.children, list)
         ):
             # Ensure children are Element instances (wrap primitives)
             def _ensure_list_of_elements(lst):
@@ -147,7 +149,9 @@ class ComponentInstance:
 
             # if the element identity (tag/props) changed we should still replace the whole node.
             # To keep it simple: if tags differ, fallback to full replace
-            if getattr(self._mounted_child, "tag", None) != getattr(new_elem, "tag", None):
+            if getattr(self._mounted_child, "tag", None) != getattr(
+                new_elem, "tag", None
+            ):
                 # full replace fallback
                 old = self._mounted_child
                 old_node_id = old.node_id
@@ -160,7 +164,9 @@ class ComponentInstance:
                         if hasattr(kernel.dom, "remove"):
                             kernel.dom.remove(old_node_id)
                         else:
-                            kernel.dom.update(old_node_id, {"style": {"display": "none"}})
+                            kernel.dom.update(
+                                old_node_id, {"style": {"display": "none"}}
+                            )
                     except Exception:
                         pass
                 new_id = new_elem._build()
@@ -177,7 +183,7 @@ class ComponentInstance:
 
             return
 
-        #  FULL REPLACE PATH 
+        #  FULL REPLACE PATH
         old = self._mounted_child
         old_node_id = old.node_id
 
@@ -202,10 +208,9 @@ class ComponentInstance:
         kernel.dom.append(self._container_id, new_id)
         self._mounted_child = new_elem
 
-
-    #    
+    #
     # Unmount Component
-    #    
+    #
     def unmount(self):
         # run cleanup lifecycle
         for fn in self._cleanup_callbacks:
@@ -227,16 +232,18 @@ class ComponentInstance:
                 if hasattr(kernel.dom, "remove"):
                     kernel.dom.remove(self._container_id)
                 else:
-                    kernel.dom.update(self._container_id, {"style": {"display": "none"}})
+                    kernel.dom.update(
+                        self._container_id, {"style": {"display": "none"}}
+                    )
             except Exception:
                 pass
 
         self._is_mounted = False
 
 
-#  
+#
 # @component decorator
-#  
+#
 def component(fn: Callable[..., Any]) -> Callable[..., ComponentInstance]:
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> ComponentInstance:
@@ -258,8 +265,8 @@ def component(fn: Callable[..., Any]) -> Callable[..., ComponentInstance]:
     return wrapper
 
 
-#  
+#
 # Manual mount helper (router uses this indirectly)
-#  
+#
 def render_component(comp_inst: ComponentInstance, selector: str = "body"):
     comp_inst.mount_to(selector)

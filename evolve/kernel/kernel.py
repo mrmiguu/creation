@@ -58,7 +58,8 @@ def log(level: str, msg: str) -> dict[str, Any]:
 class _Dom:
     @staticmethod
     def create(
-        tag: str, props: dict[str, Any] | None = None, children: list[Any] | None = None) -> dict[str, Any]:
+        tag: str, props: dict[str, Any] | None = None, children: list[Any] | None = None
+    ) -> dict[str, Any]:
         props = props or {}
         children = children or []
 
@@ -67,7 +68,7 @@ class _Dom:
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
-        
+
     @staticmethod
     def remove(node_id: int) -> dict[str, Any]:
         try:
@@ -75,7 +76,7 @@ class _Dom:
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
-        
+
     @staticmethod
     def insert_at(parentID: int, nodeID: int, index: int) -> dict[str, Any]:
         """
@@ -124,7 +125,6 @@ dom = _Dom()
 
 
 class _FS:
-    
     @staticmethod
     def read(path: str) -> dict[str, Any]:
         try:
@@ -150,7 +150,7 @@ fs = _FS()
 
 class _NET:
     @staticmethod
-    async def fetch(url: str, options: dict[str,Any] | None = None) -> dict[str, Any]:
+    async def fetch(url: str, options: dict[str, Any] | None = None) -> dict[str, Any]:
         options = options or {}
 
         try:
@@ -165,8 +165,8 @@ net = _NET()
 
 # LOCATION / HISTORY WRAPPER
 
-class _Location:
 
+class _Location:
     @staticmethod
     def get_path() -> str:
         try:
@@ -198,6 +198,7 @@ class _Location:
             return _to_py(EvolveKernel.location.onChange(cb_id))
         except Exception as e:
             return {"ok": False, "error": str(e)}
+
 
 location = _Location()
 

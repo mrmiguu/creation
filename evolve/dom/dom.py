@@ -31,7 +31,6 @@ class Element:
         self._mounted: bool = False
         self.key = props.pop("key", None)
 
-
     #
     # Internal helper: create child node for Signal/Computed
     #

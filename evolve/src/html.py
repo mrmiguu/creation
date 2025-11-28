@@ -1,8 +1,7 @@
-
 """
 High-level HTML API for Evolve.
 
-Adds: 
+Adds:
 - tw("...") utility for Tailwind-like inline CSS
 - Clean element factories
 - Prop normalization (class_, for_, data_*, aria_*)
@@ -12,9 +11,9 @@ from typing import Any
 from .. import dom as _dom
 
 
-#  
+#
 # Tailwind-like translator
-#  
+#
 
 _TW_MAP = {
     "flex": {"display": "flex"},
@@ -26,14 +25,12 @@ _TW_MAP = {
     "justify-center": {"justify-content": "center"},
     "justify-between": {"justify-content": "space-between"},
     "justify-around": {"justify-content": "space-around"},
-
     # Gap utilities (example)
     "gap-1": {"gap": "0.25rem"},
     "gap-2": {"gap": "0.5rem"},
     "gap-3": {"gap": "0.75rem"},
     "gap-4": {"gap": "1rem"},
     "gap-6": {"gap": "1.5rem"},
-
     # Padding (example scale)
     "p-1": {"padding": "0.25rem"},
     "p-2": {"padding": "0.5rem"},
@@ -43,22 +40,20 @@ _TW_MAP = {
     "pb-2": {"padding-bottom": "0.5rem"},
     "pl-2": {"padding-left": "0.5rem"},
     "pr-2": {"padding-right": "0.5rem"},
-
     # Margin (optional for now)
     "m-2": {"margin": "0.5rem"},
     "mx-2": {"margin-left": "0.5rem", "margin-right": "0.5rem"},
     "my-2": {"margin-top": "0.5rem", "margin-bottom": "0.5rem"},
-
     # Colors (just a few examples)
     "text-white": {"color": "white"},
     "bg-red-500": {"background-color": "#ef4444"},
     "bg-blue-500": {"background-color": "#3b82f6"},
     "bg-gray-800": {"background-color": "#1f2937"},
-    
     # Border radius
     "rounded": {"border-radius": "0.25rem"},
     "rounded-lg": {"border-radius": "0.5rem"},
 }
+
 
 def _tw_to_style(classes: str) -> dict[str, str]:
     """Convert Tailwind-like classes to inline style dict."""
@@ -73,6 +68,7 @@ def _tw_to_style(classes: str) -> dict[str, str]:
 
     return style
 
+
 def tw(classes: str) -> dict[str, Any]:
     """Return a special marker dict for tw styles."""
     if ":" in classes:
@@ -81,12 +77,14 @@ def tw(classes: str) -> dict[str, Any]:
     return {"__tw_style__": _tw_to_style(classes)}
 
 
-#  
+#
 # Prop normalization utilities
-#  
+#
+
 
 def _kebab_from_underscore(s: str) -> str:
     return s.replace("_", "-")
+
 
 def _normalize_prop_key(k: str) -> str:
     if k == "class_":
@@ -104,6 +102,7 @@ def _normalize_prop_key(k: str) -> str:
 
     return k
 
+
 def _normalize_props(props: dict[str, Any]) -> dict[str, Any]:
     final: dict[str, Any] = {}
 
@@ -114,9 +113,10 @@ def _normalize_props(props: dict[str, Any]) -> dict[str, Any]:
     return final
 
 
-#  
+#
 # Children flattening
-#  
+#
+
 
 def _flatten_children(children):
     out = []
@@ -130,9 +130,10 @@ def _flatten_children(children):
     return out
 
 
-#  
+#
 # Factory builder
-#  
+#
+
 
 def _make_factory(tag: str):
     def factory(*children: Any, **props: Any):
@@ -171,13 +172,44 @@ def _make_factory(tag: str):
     return factory
 
 
-
 # create all HTML tag functions
 _TAGS = [
-    "div","span","p","button","input","img","form","label","select","option",
-    "ul","li","ol","h1","h2","h3","h4","h5","h6","a","nav","header","footer",
-    "main","section","article","aside","textarea","pre","code","table","thead",
-    "tbody","tr","td","th"
+    "div",
+    "span",
+    "p",
+    "button",
+    "input",
+    "img",
+    "form",
+    "label",
+    "select",
+    "option",
+    "ul",
+    "li",
+    "ol",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "a",
+    "nav",
+    "header",
+    "footer",
+    "main",
+    "section",
+    "article",
+    "aside",
+    "textarea",
+    "pre",
+    "code",
+    "table",
+    "thead",
+    "tbody",
+    "tr",
+    "td",
+    "th",
 ]
 
 globals_dict = globals()

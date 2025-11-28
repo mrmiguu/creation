@@ -42,7 +42,7 @@ def reconcile(parent_id: int, old: List[Element], new: List[Element]):
             # brand new element → will be built
             new_dom_order.append(el)
 
-    #  Apply DOM operations 
+    #  Apply DOM operations
     # We iterate new_dom_order and ensure parent contains children in this exact order.
 
     # 1) Ensure each element is in correct position
