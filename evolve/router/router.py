@@ -14,7 +14,7 @@ from kernel.kernel import kernel
 from dom.dom import div, Element
 
 
-from .html import _flatten_children, _normalize_props, a
+from ..src.html import _flatten_children, _normalize_props, a
 
 
 def Link(to: str, *children, **props) -> Element:
