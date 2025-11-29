@@ -4,7 +4,7 @@ Push-based dependency tracking similar to Solid.js.
 
 """
 
-from collections.abc import Callable, Any
+from typing import Callable, Any
 import itertools
 import traceback
 
@@ -109,32 +109,24 @@ def effect(fn: Callable[[], Any]) -> Callable[[], None]:
     """
     Registers an effect. Effect is run immediately and then on each dependency change.
     Returns a runner function, so it can be stored or called manually.
-
     """
-    if not Callable(fn):
-        raise TypeError("effect expects callable")
-    # Give effect an ID
+    if not callable(fn):
+        raise TypeError("effect expects a callable")
 
     eff_id = next(_id_counter)
 
     def runner():
         try:
-            # mark the runner with __eff_id so signals can register
             runner.__effect_id = eff_id
             _current_effect_stack.append(runner)
-
-            # RUN the effect
-            res = fn()
-            return res
+            return fn()
         finally:
             _current_effect_stack.pop()
-            # runner.__effect_id remains for subscription identity.
 
-    # Attach id for removal/inspection
     runner.__effect_id = eff_id
-    # Run immediately to collect depedencies
     runner()
     return runner
+
 
 
 # COMPUTED

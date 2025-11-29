@@ -1,0 +1,38 @@
+[project]
+name = "evolve"
+version = "0.1.0"
+description = "A Python-first UI framework that runs in the browser using Pyodide."
+readme = "README.md"
+authors = [
+    { name = "Parag Ghatage", email = "parag.dev2025@gmail.com" }
+]
+requires-python = ">=3.14"
+license = { text = "MIT" }
+
+dependencies = [
+    
+]
+
+[project.scripts]
+evolve = "evolve.cli.cli:main"
+
+# Include JS, WASM, and Python assets inside the wheel!
+[tool.setuptools.package-data]
+"evolve" = [
+    "js/*.js",
+    "assets/pyodide/*",
+    "assets/pyodide/python/*",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["evolve*"]
+
+[tool.uv.workspace]
+members = [
+    "tmp/test",
+]
+
+[build-system]
+requires = ["setuptools>=65", "wheel"]
+build-backend = "setuptools.build_meta"

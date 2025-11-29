@@ -1,6 +1,5 @@
-from typing import Any, Callable
-from .component import ComponentInstance 
-from .html import div
+from ..src.html import div
+from typing import Any
 
 # GLOBAL registry of context stacks
 _CONTEXTS = {}

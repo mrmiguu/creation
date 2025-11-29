@@ -10,11 +10,14 @@ Evolve router system.
 from typing import Callable, Any
 import re
 from ..components.component import ComponentInstance
-from kernel.kernel import kernel
-from dom.dom import div, Element
+from ..kernel.kernel import kernel
+from ..dom.dom import div, Element
 
 
 from ..src.html import _flatten_children, _normalize_props, a
+from ..components.component import component
+
+
 
 
 def Link(to: str, *children, **props) -> Element:
@@ -117,14 +120,10 @@ ROUTES: list[Route] = []
 
 
 def page(pattern: str):
-    """
-    @page("/") --> register route
-    """
-
     def decorator(fn: Callable):
-        ROUTES.append(Route(pattern, fn))
-        return fn
-
+        comp_fn = component(fn)   # wrap into ComponentInstance factory
+        ROUTES.append(Route(pattern, comp_fn))
+        return comp_fn
     return decorator
 
 
@@ -186,30 +185,26 @@ class Router:
         route, params = self.match_route(path)
 
         if route is None:
-            # render 404 page
-
-            comp = div("404 - Page Not Found")
-
-            self._render(comp, {})
+            @component
+            def NotFound():
+                return div("404 - Page Not Found")
+            self._render(NotFound(), {})
             return
 
         component_fn = route.component_fn
-        comp_elem = component_fn(params) if params else component_fn()
+        comp_inst = component_fn(params) if params else component_fn()
 
-        if not isinstance(comp_elem, ComponentInstance):
-            # convert it to component instance
-            comp_elem = ComponentInstance(component_fn, props=params or {}, children=[])
+        self._render(comp_inst, params)
 
-        self._render(comp_elem, params)
 
     def _render(self, comp_inst: ComponentInstance, params: dict[str, Any]):
-        # unmount previous component
-
+        # unmount previous route component
         if self.current_component:
             self.current_component.unmount()
 
-        # mount_new
-        comp_inst.container._build()
-        kernel.dom.remove(self.root_id)
-        kernel.dom.append(self.root_id, comp_inst.container.node_id)
+        # mount new route component inside the root div
+        comp_inst.mount_to("#__evolve_root__")
+
         self.current_component = comp_inst
+
+

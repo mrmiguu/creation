@@ -1,5 +1,3 @@
-from typing import Callable, Any
-
 _CURRENT_COMPONENT_STACK = []
 
 

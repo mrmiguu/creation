@@ -15,7 +15,7 @@ from ..kernel.kernel import kernel
 from ..reactive.reactive import effect
 from ..core.lifecycle import push_component, pop_component
 from ..context.context import ProviderWrapper
-from ..context import _CONTEXTS as _CONTEXT_STACKS
+from ..context.context import _CONTEXTS as _CONTEXT_STACKS
 from ..diff.keyed import reconcile
 import functools
 import inspect

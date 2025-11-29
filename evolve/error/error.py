@@ -1,5 +1,5 @@
 from typing import Any, Callable
-from ..html.html import div
+from ..src.html import div
 from ..components.component import ComponentInstance, _ensure_element
 from ..reactive.reactive import signal
 

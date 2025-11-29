@@ -8,9 +8,8 @@ Handles subscription storage + unmounting.
 """
 
 from typing import Any
-from collections.abc import Callable
-from .kernel import kernel
-from .reactive import Signal, Computed
+from ..kernel.kernel import kernel
+from ..reactive.reactive import Signal, Computed
 
 
 class Element:

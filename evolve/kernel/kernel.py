@@ -20,7 +20,7 @@ Notes:
 
 from typing import Any, Callable
 from js import EvolveKernel
-from pyodide import create_proxy
+from pyodide.ffi import create_proxy
 import asyncio
 
 # string callback_proxies and pyfunction in dict , so Garbage collector wont remove them
