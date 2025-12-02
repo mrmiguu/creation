@@ -8,7 +8,7 @@ Adds:
 """
 
 from typing import Any
-from .. import dom as _dom
+from ..dom.dom import _make_element
 
 
 #
@@ -53,6 +53,8 @@ _TW_MAP = {
     "rounded": {"border-radius": "0.25rem"},
     "rounded-lg": {"border-radius": "0.5rem"},
 }
+
+
 
 
 def _tw_to_style(classes: str) -> dict[str, str]:
@@ -161,7 +163,7 @@ def _make_factory(tag: str):
                 norm_props["style"] = tw_style
 
         # Create Element
-        elem = _dom._make_element(tag, *new_children, **norm_props)
+        elem = _make_element(tag, *new_children, **norm_props)
 
         # Assign key for keyed diffing
         elem.key = key

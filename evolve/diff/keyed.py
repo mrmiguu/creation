@@ -52,7 +52,7 @@ def reconcile(parent_id: int, old: List[Element], new: List[Element]):
             el._build()
 
         # Move node to correct index in DOM
-        kernel.dom.insertAt(parent_id, el.node_id, index)
+        kernel.dom.insert_at(parent_id, el.node_id, index)
 
     # 2) Remove elements not present anymore
     old_keys = {el.key for el in old if el.key is not None}

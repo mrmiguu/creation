@@ -289,9 +289,20 @@ def cmd_init(target: str):
     (target_dir / "components").mkdir()
     (target_dir / "public").mkdir()
     (target_dir / "pages" / "home.py").write_text(
-        'from evolve.router import page\\nfrom evolve.html import *\\nfrom evolve.reactive import signal\\n\\n@page("/")\\ndef Home():\\n    count = signal(0)\\n    return div(\\n        h1(f"Count: {count()}"),\\n        button("Inc", on_click=lambda: count.set(count()+1))\\n    )\\n',
-        encoding="utf-8",
+    'from evolve.router.router import page\n'
+    'from evolve.src.html import *\n'
+    'from evolve.reactive.reactive import signal\n\n'
+    '@page("/")\n'
+    'def Home():\n'
+    '    count = signal(0)\n'
+    '    return div(\n'
+    '        h1(f"Count: {count()}"),\n'
+    '        button("Inc", on_click=lambda: count.set(count()+1))\n'
+    '    )\n',
+    encoding="utf-8",
     )
+
+
     print(f"[init] created project at {target}")
 
 

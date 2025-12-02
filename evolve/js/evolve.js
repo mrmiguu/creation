@@ -1,6 +1,15 @@
-// Evolve loader - final stable version
-
+// Evolve loader - FINAL DEBUG BUILD
 (function (global) {
+
+  // ------------------------------
+  // PREVENT MULTIPLE BOOTS
+  // ------------------------------
+  if (global.__evolve_booted__) {
+    console.log("[Evolve] Duplicate evolve.js load ignored");
+    return;
+  }
+  global.__evolve_booted__ = true;
+
   const E = (global.Evolve = global.Evolve || {});
   E.debug = true;
 
@@ -8,31 +17,33 @@
   const DEFAULT_APP_URL = "/app.py";
   const ENGINE_ZIP = "/evolve.zip";
 
-  function log(...msg) {
+  const log = (...msg) => {
     if (E.debug) console.log("[Evolve]", ...msg);
-  }
-  function fail(...msg) {
-    console.error("[Evolve ERROR]", ...msg);
-  }
+  };
+  const fail = (...msg) => console.error("[Evolve ERROR]", ...msg);
 
-  // --------------------------------------------------
-  // Wait for kernel.js to initialize
-  // --------------------------------------------------
+  // ------------------------------------------------------------
+  // Wait until window.EvolveKernel is available
+  // ------------------------------------------------------------
   async function waitForKernel() {
+    log("Waiting for kernel...");
     while (!global.EvolveKernel) {
       await new Promise(r => setTimeout(r, 10));
     }
+    log("Kernel detected");
     return global.EvolveKernel;
   }
 
-  // --------------------------------------------------
+  // ------------------------------------------------------------
   // Load Pyodide
-  // --------------------------------------------------
+  // ------------------------------------------------------------
   async function loadPyodideRuntime(base) {
+    log("Loading Pyodide runtime...");
+
     if (typeof global.loadPyodide !== "function") {
       const script = document.createElement("script");
       script.src = base + "pyodide.js";
-      log("Loading pyodide.js:", script.src);
+      log("Injecting pyodide.js:", script.src);
 
       await new Promise((resolve, reject) => {
         script.onload = resolve;
@@ -41,12 +52,24 @@
       });
     }
 
-    return await loadPyodide({ indexURL: base });
+    try {
+      log("Calling loadPyodide()...");
+      const py = await global.loadPyodide({ indexURL: base });
+      log("Pyodide loaded successfully");
+
+      global.pyodide = py;
+      E.pyodide = py;
+
+      return py;
+    } catch (err) {
+      fail("Pyodide FAILED to initialize:", err);
+      throw err;
+    }
   }
 
-  // --------------------------------------------------
-  // Load evolve.zip into Pyodide filesystem
-  // --------------------------------------------------
+  // ------------------------------------------------------------
+  // Load evolve.zip into Pyodide FS
+  // ------------------------------------------------------------
   async function loadEngineZip(pyodide) {
     log("Fetching evolve.zip...");
 
@@ -55,65 +78,85 @@
 
     const buf = await r.arrayBuffer();
 
-    log("Unpacking evolve.zip into FS /");
+    log("Unpacking evolve.zip...");
     pyodide.runPython(`import os; os.chdir('/')`);
     pyodide.unpackArchive(buf, "zip");
 
-    // Allow "import evolve"
     pyodide.runPython(`import sys; sys.path.insert(0, '/')`);
 
-    // Debug
     log("sys.path =", pyodide.runPython("import sys; sys.path"));
     log("root files =", pyodide.runPython("import os; os.listdir('/')"));
     log("evolve exists =", pyodide.runPython("import os; 'evolve' in os.listdir('/')"));
   }
 
-  // --------------------------------------------------
-  // Load and execute the generated app.py
-  // --------------------------------------------------
+  // ------------------------------------------------------------
+  // Load and run app.py
+  // ------------------------------------------------------------
   async function loadApp(pyodide, url) {
+    log("Fetching app.py...");
     const resp = await fetch(url);
-    if (!resp.ok) throw new Error("Failed to load app.py");
+    if (!resp.ok) throw new Error("Failed to fetch app.py");
+
     const code = await resp.text();
     log("Executing app.py...");
-    await pyodide.runPythonAsync(code);
+
+    try {
+      await pyodide.runPythonAsync(code);
+      log("app.py executed");
+    } catch (err) {
+      fail("Error while executing app.py:", err);
+      throw err;
+    }
   }
 
-  // --------------------------------------------------
-  // MAIN START FUNCTION (correct order)
-  // --------------------------------------------------
+  // ------------------------------------------------------------
+  // MAIN ENTRYPOINT
+  // ------------------------------------------------------------
   E.start = async function start(options = {}) {
-    const pyodideBase = options.pyodideBase || DEFAULT_PYODIDE_BASE;
-    const appUrl = options.appUrl || DEFAULT_APP_URL;
+
+    // extra safety
+    if (global.__evolve_started__) {
+      console.log("[Evolve] start() already executed — skipping");
+      return;
+    }
+    global.__evolve_started__ = true;
 
     log("Starting Evolve…");
 
-    // 1. Wait for kernel.js
+    const pyodideBase = options.pyodideBase || DEFAULT_PYODIDE_BASE;
+    const appUrl = options.appUrl || DEFAULT_APP_URL;
+
     const kernel = await waitForKernel();
-
-    // 2. Initialize Pyodide
     const pyodide = await loadPyodideRuntime(pyodideBase);
-    E.pyodide = pyodide;
 
-    // 3. Register kernel as a Python module
+    try {
+      if (typeof pyodide.setDebug === "function") {
+        pyodide.setDebug(true);
+        log("Pyodide debug mode ON");
+      }
+    } catch (err) {
+      console.warn("pyodide.setDebug failed:", err);
+    }
+
+    log("Registering JS kernel module inside Python");
     pyodide.registerJsModule("kernel", kernel);
-
-    // Optional debug module
     pyodide.registerJsModule("evolve_js", {
       log: (...a) => console.log("[Python→JS]", ...a),
     });
 
-    // 4. ⚡ Load evolve.zip BEFORE running the app
     await loadEngineZip(pyodide);
-
-    // 5. ⚡ Now load the user code (app.py)
     await loadApp(pyodide, appUrl);
 
-    // 6. If Python defines start(), call it
     const pyStart = pyodide.globals.get("start");
-    if (pyStart) {
+    if (!pyStart) {
+      fail("Python start() not found! Router will NOT initialize.");
+    } else {
       log("Calling Python start()");
-      pyStart();
+      try {
+        pyStart();
+      } catch (err) {
+        fail("Error in Python start():", err);
+      }
     }
 
     log("Evolve fully started!");

@@ -20,7 +20,7 @@ Notes:
 
 from typing import Any, Callable
 from js import EvolveKernel
-from pyodide.ffi import create_proxy
+from pyodide.ffi import create_proxy, to_js
 import asyncio
 
 # string callback_proxies and pyfunction in dict , so Garbage collector wont remove them
@@ -55,62 +55,98 @@ def log(level: str, msg: str) -> dict[str, Any]:
 # DOM WRAPPERS
 
 
+# inside evolve/kernel/kernel.py -- replace the existing _Dom class methods with the code below
+
+
+def _deep_sanitize(v):
+    """
+    Convert PyProxies to plain Python values (via to_py()) and recursively
+    sanitize dicts/lists so that to_js receives only normal Python primitives/containers.
+    """
+    try:
+        if hasattr(v, "to_py"):
+            try:
+                return v.to_py()
+            except Exception:
+                # if to_py fails for some proxy, fallthrough to other checks
+                pass
+    except Exception:
+        pass
+
+    if isinstance(v, dict):
+        out = {}
+        for k, vv in v.items():
+            out[k] = _deep_sanitize(vv)
+        return out
+
+    if isinstance(v, (list, tuple)):
+        return [_deep_sanitize(i) for i in v]
+
+    # primitives: int, float, str, bool, None, etc.
+    return v
+
+
 class _Dom:
-    @staticmethod
-    def create(
-        tag: str, props: dict[str, Any] | None = None, children: list[Any] | None = None
-    ) -> dict[str, Any]:
+    def create(self, tag, props=None, children=None):
         props = props or {}
         children = children or []
 
         try:
-            res = EvolveKernel.dom.create(tag, props, children)
+            # sanitize everything (removes PyProxies by calling to_py())
+            safe_props = _deep_sanitize(props)
+            safe_children = _deep_sanitize(children)
+
+            # convert to JS native objects (do NOT pass list_converter)
+            js_props = to_js(safe_props, dict_converter=dict)
+            js_children = to_js(safe_children)
+
+            # (optional debug) - remove once stable
+            # print("[kernel.dom.create] tag:", tag, "props:", safe_props, "children:", safe_children)
+
+            res = EvolveKernel.dom.create(tag, js_props, js_children)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    @staticmethod
-    def remove(node_id: int) -> dict[str, Any]:
+    def update(self, nodeID, props=None):
+        props = props or {}
+        try:
+            # SANITIZE here as well (was missing)
+            safe_props = _deep_sanitize(props)
+            js_props = to_js(safe_props, dict_converter=dict)
+
+            # (optional debug)
+            # print("[kernel.dom.update] nodeID:", nodeID, "props:", safe_props)
+
+            res = EvolveKernel.dom.update(nodeID, js_props)
+            return _to_py(res)
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def remove(self, node_id):
         try:
             res = EvolveKernel.dom.remove(int(node_id))
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    @staticmethod
-    def insert_at(parentID: int, nodeID: int, index: int) -> dict[str, Any]:
-        """
-        Insert nodeID as a child of parentID at the given index.
-        Expects the JS kernel to provide dom.insertAt(parentId, nodeId, index).
-        """
+    def insert_at(self, parentID, nodeID, index):
         try:
             res = EvolveKernel.dom.insertAt(int(parentID), int(nodeID), int(index))
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    @staticmethod
-    def update(nodeID: int, props: dict[str, Any] | None = None) -> dict[str, Any]:
-        props = props or {}
-        try:
-            res = EvolveKernel.dom.update(nodeID, props)
-            return _to_py(res)
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
-
-    @staticmethod
-    def append(parentID: int, nodeID: int) -> dict[str, Any]:
+    def append(self, parentID, nodeID):
         try:
             res = EvolveKernel.dom.append(parentID, nodeID)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
-    @staticmethod
-    def query(selector: str) -> dict[str, Any]:
+    def query(self, selector):
         try:
             res = EvolveKernel.dom.query(selector)
-
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}

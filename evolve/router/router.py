@@ -143,28 +143,33 @@ class Router:
             return Router._instance
 
     def __init__(self):
-        self.current_component: ComponentInstance | None = None
-        self.root_id: int | None = None
+        self.current_component = None
+        self.root_id = None
 
-        # create root dic automatically
-        res = kernel.dom.create("div", {"id": "__evolve_root__"}, [])
+        # --- 1) Try to use existing <div id="app"> in index.html
+        q = kernel.dom.query("#app")
+        existing = q.get("value")
 
-        if not res.get("ok"):
-            raise RuntimeError(f"failed to create a root :{res.get('error')}")
+        if existing:
+            # found existing DOM root
+            self.root_id = existing
+        else:
+            # --- 2) Fallback: create root if HTML didn't provide it
+            res = kernel.dom.create("div", {"id": "app"}, [])
+            if not res.get("ok"):
+                raise RuntimeError(f"Failed to create root: {res.get('error')}")
+            self.root_id = res.get("value")
 
-        self.root_id = int(res.get("value"))
+            body_id = kernel.dom.query("body")["value"]
+            kernel.dom.append(body_id, self.root_id)
 
-        # append to body
-
-        body_id = kernel.dom.query("body")["value"]
-
-        kernel.dom.append(body_id, self.root_id)
-
-        # Listen to pop_state (back/forward)
+        # --- 3) Listen to popstate
         kernel.location.on_change(self._on_path_change)
 
-        # initial render
+        # --- 4) Initial page render
         self._on_path_change()
+
+
 
     # ROUTE MATCHING
 
@@ -203,7 +208,7 @@ class Router:
             self.current_component.unmount()
 
         # mount new route component inside the root div
-        comp_inst.mount_to("#__evolve_root__")
+        comp_inst.mount_to("#app")
 
         self.current_component = comp_inst
 
