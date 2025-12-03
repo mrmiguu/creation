@@ -1,274 +1,239 @@
 
+<div align="center">
+  <h1>🧬 Evolve</h1>
+  <p><strong>The Python-Native Frontend Framework</strong></p>
+  
+  <p>
+    <a href="https://pypi.org/project/evolve/">
+      <img src="https://img.shields.io/badge/pypi-v0.1.0-blue?style=flat-square&logo=pypi&logoColor=white" alt="PyPI Version" />
+    </a>
+    <a href="#">
+      <img src="https://img.shields.io/badge/python-3.14+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python Version" />
+    </a>
+    <a href="LICENSE">
+      <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
+    </a>
+  </p>
 
-# 📦 **Evolve — The Python-Native Frontend Framework**
-
-**Evolve** is a next-generation frontend framework that brings **Python** directly into the browser through **WebAssembly**, combining:
-
-* Python → WASM performance
-* A minimal **2 KB JavaScript DOM kernel**
-* A **Solid.js-style reactive engine**
-* A clean Pythonic component model
-* Tiny bundle sizes
-* No server required
-
-**Write your entire UI in Python. Deploy anywhere. Runs in every modern browser.**
-
-Evolve is designed to be for Python what React/Solid/Svelte are for JavaScript — but simpler, faster, and powered by a radically minimalist architecture.
-
----
-
-# 🚀 **Why Evolve?**
-
-Until now, no one has successfully built a *real* reactive frontend system for Python.
-
-Previous attempts (PyScript, Brython) failed because they:
-
-* Mutated the DOM directly without diffing
-* Used bloated JS runtimes
-* Had slow event loops
-* Treated Python as an afterthought
-
-**Evolve flips the paradigm.**
-
-It treats **Python as the first-class language for UI rendering** — with a state system modeled after Solid.js, giving extremely fast updates with minimal DOM changes.
-
-You get the **ergonomics of Python**, the **reactivity of Solid**, and the **performance of WASM**.
+  <p>
+    Build high-performance, reactive web applications entirely in Python.<br/>
+    Powered by <strong>Pyodide (WASM)</strong> and a fine-grained <strong>Solid.js-style</strong> reactive engine.
+  </p>
+</div>
 
 ---
 
-# 🌌 **Core Principles**
+## 🚀 Overview
 
-* 🟣 **Tiny JS kernel** — only DOM ops + event forwarding
-* 🟣 **Everything else in Python**
-* 🟣 **Handle-based DOM nodes** (safe + fast)
-* 🟣 **Signals instead of Virtual DOM**
-* 🟣 **Batch DOM updates**
-* 🟣 **Pure static deployment** (Vercel, Netlify, CF Pages)
-* 🟣 **Full component system**
-* 🟣 **Runs completely in-browser**
-* 🟣 **Optional Python backend integration**
+**Evolve** is a paradigm shift for Python web development. Unlike traditional frameworks that render HTML on the server (Django, Flask) or wrap heavy JS runtimes, Evolve runs **natively in the browser** via WebAssembly.
 
-Evolve is architected around the upcoming **WASM Component Model**, making it future-proof.
+It features a **radical 2KB JavaScript micro-kernel** that handles DOM operations, while your application logic, state management, and component rendering happen entirely in Python.
+
+### Why Evolve?
+
+- **⚡ Zero Virtual DOM:** Uses fine-grained signals for direct DOM updates (O(1) complexity).
+- **🐍 Python Native:** Write components, routing, and logic in pure Python.
+- **📦 Tiny Bundle:** A minimal JS kernel coupled with an optimized Python environment.
+- **🌐 Static Deployment:** Builds to pure HTML/CSS/WASM. Deploy to Vercel, Netlify, or GitHub Pages.
 
 ---
 
-# 🏗 **High-Level Architecture**
+## 🛠 Installation
 
-```mermaid
-flowchart TD
+Requires Python 3.14+.
 
-    subgraph PY["Python - WASM Layer"]
-        A[Components] --> B[Reactive Engine - Signals]
-        B --> C[Diff Engine]
-        C --> D[Patch List]
-    end
+```bash
+pip install evolve
+````
 
-    subgraph JS["JS Micro Kernel - 2KB"]
-        E[DOM API] --> F[Real DOM]
-        G[Event Listener] --> H[Event Dispatch]
-    end
+-----
 
-    D -- send patches --> E
-    G -- forward events --> A
+## ⚡ Quick Start
 
-    F -- UI Rendered --> User((User))
+Get a reactive app running in seconds using the CLI.
 
+### 1\. Initialize a Project
+
+```bash
+evolve init my-app
+cd my-app
 ```
 
----
+### 2\. Run the Dev Server
 
-# 🧩 **Repository Structure**
-
-```
-Evolve/
-├── kernel/
-│   └── kernel.js            # 2KB JS DOM micro-kernel
-├── src/
-│   ├── evolve/
-│   │   ├── signals.py       # Solid.js style signals system
-│   │   ├── dom.py           # Python ↔ JS DOM bridge
-│   │   ├── elements.py      # HTML element factories
-│   │   ├── component.py     # Component decorator & logic
-│   │   ├── renderer.py      # Renderer + diff/patch pipeline
-│   │   └── runtime.py       # Main runtime loop
-│   └── app.py               # Example App()
-├── examples/
-│   ├── counter/
-│   ├── todo/
-│   └── forms/
-├── public/
-│   ├── index.html           # Bundled Pyodide + Kernel
-│   └── styles.css
-├── docs/
-│   ├── architecture.md
-│   ├── api.md
-│   └── guide.md
-├── evolve-cli/
-│   └── cli.py               # pypulse init, build, dev
-├── build/
-├── LICENSE
-└── README.md
+```bash
+evolve run
 ```
 
----
+Visit `http://localhost:3000` to see your app.
 
-# ⚙️ **How It Works (Deep Dive)**
+### 3\. Build for Production
 
-### **1. JS Micro-Kernel (~2 KB)**
-
-Evolve keeps JavaScript tiny.
-
-Responsibilities:
-
-* createElement(tag)
-* setText(node, text)
-* setAttr(node, key, val)
-* append(parent, child)
-* remove(node)
-* addEventListener(node, event, listenerId)
-* dispatchEvent(listenerId, eventData)
-
-Dom nodes stored in:
-
-```js
-const NODES = new Map();
+```bash
+evolve build
 ```
 
-Python never touches real DOM nodes — only handles.
+This compiles your Python code and assets into the `dist/` folder, ready for static hosting.
 
----
+-----
 
-### **2. Python–JS Bridge (Pyodide)**
+## 🧩 The "Hello World" Component
 
-Python calls JS kernel through wrappers like:
+Evolve uses a functional component syntax inspired by React but powered by Python.
+
+`pages/home.py`:
 
 ```python
-from js import kernel
+from evolve.router.router import page
+from evolve.src.html import div, h1, button, p
+from evolve.reactive.reactive import signal
 
-def create_element(tag):
-    return kernel.createElement(tag)
-```
+@page("/")
+def Home():
+    # Reactive state (Signals)
+    count = signal(0)
 
-Events flow **back** into Python using callback IDs.
+    def increment():
+        count.set(count() + 1)
 
----
-
-### **3. Reactive Engine (Signals)**
-
-A lightweight dependency graph:
-
-```python
-count = Signal(0)
-
-def increment():
-    count.value += 1
-```
-
-Updates automatically trigger component-level redraws, with **no virtual DOM**.
-
----
-
-### **4. Component Renderer**
-
-Components return Python objects representing virtual DOM nodes.
-
-Renderer computes:
-
-* initial DOM tree
-* diff on state change
-* patch list
-* apply patches via JS kernel
-
-Example patch:
-
-```python
-[
-  ("setText", {"handle": 12, "value": "Hello Parag"}),
-  ("setAttr", {"handle": 8, "key": "class", "value": "active"}),
-]
-```
-
----
-
-### **5. Developer API**
-
-A clean Pythonic API inspired by React/Solid:
-
-```python
-from evolve import component, Signal, div, button, h1
-
-count = Signal(0)
-
-@component
-def App():
     return div(
-        h1("Counter"),
-        button("+", on_click=lambda: count.set(count.get() + 1)),
-        text=count
+        h1("Welcome to Evolve 🧬"),
+        p(f"Current count is: {count()}"),
+        button("Increment", on_click=lambda: increment()),
+        style={"text-align": "center", "font-family": "sans-serif"}
     )
 ```
 
----
+-----
 
-### **6. Build System + CLI**
+## ✨ Key Features
 
-CLI commands:
+### 1\. Fine-Grained Reactivity (Signals)
+
+Evolve doesn't re-render entire components. When a `signal` changes, only the specific text node or attribute bound to it updates.
+
+```python
+from evolve.reactive.reactive import signal, computed
+
+count = signal(0)
+double = computed(lambda: count() * 2)
+
+# Only this text node updates in the DOM
+span(f"Double is: {double()}") 
+```
+
+### 2\. Built-in Routing
+
+A lightweight, history-mode router is included out of the box.
+
+```python
+from evolve.router.router import page, Link
+
+@page("/about")
+def About():
+    return div(
+        h1("About Us"),
+        Link("Go Home", to="/")
+    )
+```
+
+### 3\. Tailwind-Style Styling
+
+Evolve includes a `tw()` utility for rapid styling without leaving Python.
+
+```python
+from evolve.src.html import div, tw
+
+div("Hello", **tw("text-white bg-blue-500 p-4 rounded-lg flex justify-center"))
+```
+
+### 4\. Component Lifecycle
+
+Hook into mount and unmount events for side effects (API calls, subscriptions).
+
+```python
+from evolve.components.component import component
+from evolve.core.lifecycle import on_mount, on_cleanup
+
+@component
+def Timer():
+    on_mount(lambda: print("Component mounted!"))
+    on_cleanup(lambda: print("Cleaned up!"))
+    return div("Timer Component")
+```
+
+-----
+
+## 🏗 Architecture
+
+Evolve bridges the gap between Python and the Browser DOM using a highly efficient architecture:
+
+```mermaid
+flowchart TD
+    subgraph Browser ["Browser (WASM Context)"]
+        direction TB
+        App[Your App.py] --> Reactive[Reactive Engine]
+        Reactive --> Diff[Diff Engine]
+        Diff --> Patch[Patch List]
+    end
+
+    subgraph Kernel ["JS Micro-Kernel (2KB)"]
+        Bridge[Pyodide Bridge]
+        RealDOM[Real DOM]
+    end
+
+    Patch -- "Serialized Ops" --> Bridge
+    Bridge --> RealDOM
+    RealDOM -- "Events" --> App
 
 ```
-evolve init myapp
-evolve dev
-evolve build
-evolve preview
+
+1.  **Python Layer:** Calculates changes using Signals.
+2.  **Diff Engine:** Generates a minimal list of DOM operations (patches).
+3.  **JS Kernel:** A tiny JavaScript layer receives patches and applies them to the real DOM.
+
+-----
+
+## 📂 Project Structure
+
+When you run `evolve init`, the following structure is created:
+
+```text
+my-app/
+├── components/       # Reusable UI components
+├── pages/            # Route handlers (@page)
+├── public/           # Static assets (images, fonts)
+├── evolve.zip        # Packed engine (generated on build)
+└── app.py            # Entry point (auto-generated)
 ```
 
-Outputs pure static assets deployable anywhere.
+-----
 
----
+## 🛣 Roadmap
 
-# 📚 **Roadmap**
+  - [x] **v0.1:** Core Reactive Engine & JS Kernel
+  - [x] **v0.1:** Component System & Routing
+  - [x] **v0.1:** CLI (`init`, `build`, `run`)
+  - [ ] **v0.2:** Global State Management (Store)
+  - [ ] **v0.3:** Form Handling & Validation
+  - [ ] **v0.4:** Server-Side Rendering (SSR) capabilities
+  - [ ] **v1.0:** Full WASM Component Model Support
 
-### ✅ Phase 1 — JS Kernel
+-----
 
-### 🔄 Phase 2 — Bridge + Runtime
+## 🤝 Contributing
 
-### 🔄 Phase 3 — Signals
+We welcome contributions\! Please see our [Contributing Guide](#) for details on how to set up the development environment.
 
-### 🔄 Phase 4 — Renderer + Patching
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
 
-### 🔄 Phase 5 — Events
+-----
 
-### 🔄 Phase 6 — CLI
+## 📄 License
 
-### 🔄 Phase 7 — Docs + Examples
-
-### 🔮 Phase 8 — WASM Component Model support
-
----
-
-# 🌍 **Deploy Anywhere**
-
-Once built:
-
-* Vercel
-* Netlify
-* Cloudflare Pages
-* GitHub Pages
-* S3 + CloudFront
-* Any static host
-
-No backend required.
-
----
-
-# 🌟 **Vision**
-
-Evolve aims to become:
-
-* the **first real Python-native frontend framework**
-* a **React/Solid alternative for Python devs**
-* a bridge between **AI + browser UI**
-* a modern framework built for **WASM 2.0 era**
-
-The web deserves more than JavaScript.
-Python deserves its own first-class frontend engine.
-**Evolve is that engine.**
+Distributed under the MIT License. See `LICENSE` for more information.
+-----
