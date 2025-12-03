@@ -177,7 +177,7 @@ flowchart TD
         Diff --> Patch[Patch List]
     end
 
-    subgraph Kernel ["JS Micro-Kernel (2KB)"]
+    subgraph Kernel ["JS Micro-Kernel"]
         Bridge[Pyodide Bridge]
         RealDOM[Real DOM]
     end
