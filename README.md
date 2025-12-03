@@ -2,7 +2,7 @@
 <div align="center">
   <h1>🧬 Evolve</h1>
   <p><strong>The Python-Native Frontend Framework</strong></p>
-  <p><em>🚀 v1 coming soon! Evolve is actively evolving - polishing the reactive engine & browser kernel before final release.</em></p>
+  <p><em> v1 coming soon! Evolve is actively evolving - polishing the reactive engine & browser kernel before final release.</em></p>
   <p>
     <a href="https://pypi.org/project/evolve/">
       <img src="https://img.shields.io/badge/pypi-v0.1.0-blue?style=flat-square&logo=pypi&logoColor=white" alt="PyPI Version" />
@@ -22,23 +22,23 @@
 </div>
 
 ---
-
-## 🚀 Overview
-
-**Evolve** is a paradigm shift for Python web development. Unlike traditional frameworks that render HTML on the server (Django, Flask) or wrap heavy JS runtimes, Evolve runs **natively in the browser** via WebAssembly.
-
-It features a **radical 2KB JavaScript micro-kernel** that handles DOM operations, while your application logic, state management, and component rendering happen entirely in Python.
-
-### Why Evolve?
+### Highlights
 
 - **⚡ Zero Virtual DOM:** Uses fine-grained signals for direct DOM updates (O(1) complexity).
 - **🐍 Python Native:** Write components, routing, and logic in pure Python.
 - **📦 Tiny Bundle:** A minimal JS kernel coupled with an optimized Python environment.
 - **🌐 Static Deployment:** Builds to pure HTML/CSS/WASM. Deploy to Vercel, Netlify, or GitHub Pages.
-
 ---
 
-## 🛠 Installation
+
+
+**Evolve** is a paradigm shift for Python web development. Unlike traditional frameworks that render HTML on the server (Django, Flask) or wrap heavy JS runtimes, Evolve runs **natively in the browser** via WebAssembly.
+
+It features a **radical 2KB JavaScript micro-kernel** that handles DOM operations, while your application logic, state management, and component rendering happen entirely in Python.
+
+
+
+##  Installation
 
 Requires Python 3.14+.
 
@@ -48,7 +48,7 @@ pip install evolve
 
 -----
 
-## ⚡ Quick Start
+##  Quick Start
 
 Get a reactive app running in seconds using the CLI.
 
@@ -77,7 +77,7 @@ This compiles your Python code and assets into the `dist/` folder, ready for sta
 
 -----
 
-## 🧩 The "Hello World" Component
+##  The "Hello World" Component
 
 Evolve uses a functional component syntax inspired by React but powered by Python.
 
@@ -106,7 +106,7 @@ def Home():
 
 -----
 
-## ✨ Key Features
+##  Key Features
 
 ### 1\. Fine-Grained Reactivity (Signals)
 
@@ -164,7 +164,7 @@ def Timer():
 
 -----
 
-## 🏗 Architecture
+##  Architecture
 
 Evolve bridges the gap between Python and the Browser DOM using a highly efficient architecture:
 
@@ -194,7 +194,7 @@ flowchart TD
 
 -----
 
-## 📂 Project Structure
+##  Project Structure
 
 When you run `evolve init`, the following structure is created:
 
@@ -209,7 +209,7 @@ my-app/
 
 -----
 
-## 🛣 Roadmap
+##  Roadmap
 
   - [x] **v0.1:** Core Reactive Engine & JS Kernel
   - [x] **v0.1:** Component System & Routing
@@ -221,7 +221,7 @@ my-app/
 
 -----
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions\! Please see our [Contributing Guide](#) for details on how to set up the development environment.
 
@@ -233,7 +233,7 @@ We welcome contributions\! Please see our [Contributing Guide](#) for details on
 
 -----
 
-## 📄 License
+##  License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 -----
