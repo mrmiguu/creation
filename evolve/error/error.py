@@ -22,13 +22,10 @@ class ErrorBoundaryWrapper:
         err = self._error_signal()
 
         if err is not None:
-            # fallback may be a component OR lambda returning an element
             fallback_out = self.fallback(err)
             return _ensure_element(fallback_out)
 
-        # Normal render attempt
         try:
-            # return children rendered in a container
             return div(*self.children)
         except Exception as e:
             self._error_signal.set(e)
@@ -37,7 +34,6 @@ class ErrorBoundaryWrapper:
                     self.on_error(e)
                 except:
                     pass
-            # immediate fallback render
             fallback_out = self.fallback(e)
             return _ensure_element(fallback_out)
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Evolve CLI - minimal MVP for `evolve run`, `evolve build`, `evolve init`.
 
@@ -24,10 +23,8 @@ PAGES = ROOT / "pages"
 COMPONENTS = ROOT / "components"
 PUBLIC = ROOT / "public"
 
-# Path to the project tooling root (one level above tools/)
 PKG_ROOT = Path(__file__).resolve().parent.parent
 
-# If your engine package lives in a subfolder `evolve/`, prefer that.
 ENGINE_DIR = (PKG_ROOT / "evolve") if (PKG_ROOT / "evolve").exists() else PKG_ROOT
 
 JS_DIR = PKG_ROOT / "js"
@@ -57,7 +54,6 @@ INDEX_HTML = """<!DOCTYPE html>
 """
 
 
-# -------------- helpers -----------------
 
 def ensure_dirs():
     DIST.mkdir(parents=True, exist_ok=True)
@@ -75,7 +71,6 @@ def list_py_files(root: Path) -> List[Path]:
 
 
 def module_name_for(root: Path, file: Path) -> str:
-    # convert pages/foo/bar.py -> pages.foo.bar
     rel = file.relative_to(root.parent)  # if root is project/pages, parent is project
     parts = rel.with_suffix("").parts
     return ".".join(parts)
@@ -106,7 +101,6 @@ def copy_tree(src: Path, dst: Path):
     shutil.copytree(src, dst)
 
 
-# -------------- build logic -----------------
 
 def generate_app_py():
     """
@@ -120,7 +114,6 @@ def generate_app_py():
 
     imports = []
 
-    # Convert all project Python paths → module imports (pages.* / components.*)
     for f in pages_files + components_files:
         rel = f.relative_to(ROOT)
         mod_path = rel.with_suffix("").as_posix().replace("/", ".")
@@ -145,7 +138,6 @@ def copy_assets():
     """
     Copy evolve.js + kernel.js + pyodide folder from evolve package → dist
     """
-    # JS engine files
     evolve_js = JS_DIR / "evolve.js"
     kernel_js = JS_DIR / "kernel.js"
 
@@ -157,7 +149,6 @@ def copy_assets():
     shutil.copy2(kernel_js, DIST / "kernel.js")
     print("[build] copied evolve.js + kernel.js")
 
-    # Pyodide runtime
     if PYODIDE_DIR.exists():
         target = DIST / "pyodide"
         if target.exists():
@@ -169,7 +160,6 @@ def copy_assets():
 
 
 def copy_user_code():
-    # copy pages and components as packages (so imports in app.py work)
     if PAGES.exists():
         dest = DIST / "pages"
         if dest.exists():
@@ -182,7 +172,6 @@ def copy_user_code():
             shutil.rmtree(dest)
         shutil.copytree(COMPONENTS, dest)
         print("[build] copied components/")
-    # copy public (static) files to / (served at root)
     if PUBLIC.exists():
         for item in PUBLIC.iterdir():
             dst = DIST / item.name
@@ -214,26 +203,21 @@ def pack_engine():
     engine_src = ENGINE_DIR
 
     with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED) as z:
-        # Pack engine/ (preserve top-level folder name)
         for item in engine_src.rglob("*"):
             if item.is_file():
-                # Make arcname include the top-level engine folder, e.g. evolve/...
                 arc = item.relative_to(engine_src.parent)
                 z.write(item, arcname=str(arc))
 
-        # Pack pages/ into top-level pages/
         if PAGES.exists():
             for item in PAGES.rglob("*.py"):
                 arc = item.relative_to(ROOT)
                 z.write(item, arcname=str(arc))
 
-        # Pack components/ into top-level components/
         if COMPONENTS.exists():
             for item in COMPONENTS.rglob("*.py"):
                 arc = item.relative_to(ROOT)
                 z.write(item, arcname=str(arc))
 
-        # Pack any top-level python modules in project root (if desired)
         for item in ROOT.glob("*.py"):
             if item.name not in ["app.py"]:
                 z.write(item, arcname=item.name)
@@ -254,7 +238,6 @@ def build_all():
     print("[build] finished. dist at:", DIST)
 
 
-# ---------------- serve/run ----------------
 
 class SilentHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
@@ -276,14 +259,12 @@ def serve_dist(host: str = "127.0.0.1", port: int = 3000):
         httpd.server_close()
 
 
-# ---------------- CLI ----------------
 
 def cmd_init(target: str):
     target_dir = Path(target)
     if target_dir.exists():
         print(f"[init] {target} exists, aborting.")
         return
-    # create simple starter project
     target_dir.mkdir(parents=True)
     (target_dir / "pages").mkdir()
     (target_dir / "components").mkdir()

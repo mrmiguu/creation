@@ -1,4 +1,3 @@
-# evolve/components/component.py
 """
 Component system for Evolve.
 
@@ -39,7 +38,6 @@ def _ensure_element(x: Any) -> Element:
         return x
     if isinstance(x, (list, tuple)):
         return div(*x)
-    # primitives / other -> wrap as text inside a div
     return div(x)
 
 
@@ -54,23 +52,17 @@ class ComponentInstance:
         self.props = props or {}
         self.children = children or []
 
-        # lifecycle
         self._mount_callbacks: list[Callable] = []
         self._cleanup_callbacks: list[Callable] = []
 
-        # rendering
         self.container: Element = div()
         self._mounted_child: Element | None = None
         self._render_runner = None
         self._is_mounted = False
         self._container_id: int | None = None
 
-        # guard against re-entrant rendering
         self._is_rendering: bool = False
 
-    # ============================================================
-    # Public render() — PURE SNAPSHOT (non-reactive)
-    # ============================================================
     def render(self) -> Any:
         """
         Public render method intended to be a pure snapshot suitable for
@@ -81,19 +73,14 @@ class ComponentInstance:
         do NOT register subscriptions to the caller and do NOT cause
         render cycles while DOM tree is being constructed.
         """
-        # Save and clear the current reactive effect stack so no dependencies are tracked.
         saved_stack = list(_current_effect_stack)
         try:
             _current_effect_stack.clear()  # disable tracking temporarily
             return self._render_effect_for_child()
         finally:
-            # restore previous stack exactly as it was
             _current_effect_stack.clear()
             _current_effect_stack.extend(saved_stack)
 
-    # ============================================================
-    # Normalize Component output to Element/primitives/lists
-    # ============================================================
     def _normalize(self, value):
         """
         Recursively convert user component output into valid renderable structure:
@@ -104,16 +91,13 @@ class ComponentInstance:
         """
         from ..dom.dom import Element as DomElement
 
-        # Element (good)
         if isinstance(value, DomElement):
             return value
 
-        # ComponentInstance -> unwrap by calling public render()
         if isinstance(value, ComponentInstance):
             child_out = value.render()
             return self._normalize(child_out)
 
-        # list/tuple -> normalize each item and flatten nested lists
         if isinstance(value, (list, tuple)):
             normalized = []
             for item in value:
@@ -124,17 +108,11 @@ class ComponentInstance:
                     normalized.append(out)
             return normalized
 
-        # primitives allowed
         if value is None or isinstance(value, (str, int, float, bool)):
             return value
 
-        # fallback -> stringify
         return str(value)
 
-    # ============================================================
-    # Render child component ONCE without touching DOM
-    # (used by render() which temporarily disables tracking)
-    # ============================================================
     def _render_effect_for_child(self):
         """Render helper used by normalization or by parent when unwrapping children."""
         if isinstance(self.fn, ProviderWrapper):
@@ -152,24 +130,18 @@ class ComponentInstance:
         else:
             return self.fn(*self.children)
 
-    #
-    # EFFECT: called whenever dependencies change (mount-time runner)
-    #
     def _render_effect(self):
-        # Prevent re-entrant renders overlapping
         if getattr(self, "_is_rendering", False):
             return
         self._is_rendering = True
 
         try:
-            # If not mounted yet (or unmounted) skip
             if self._is_mounted is False and self._container_id is not None:
                 return
 
             push_component(self)
 
             try:
-                # Provider wrapper
                 if isinstance(self.fn, ProviderWrapper):
                     ctx = self.fn.ctx
                     val = self.fn.value
@@ -193,7 +165,6 @@ class ComponentInstance:
                         else:
                             raise
 
-                # Debug log
                 try:
                     from js import window as _win
                     _win.__last_vdom__ = getattr(out, "__dict__", None) or str(out)
@@ -201,7 +172,6 @@ class ComponentInstance:
                 except Exception:
                     pass
 
-                # callable → invalid
                 if callable(out) and not isinstance(out, (Element, ProviderWrapper)):
                     kernel.log("error", "Component returned callable; ignoring.")
                     out = div()
@@ -224,9 +194,6 @@ class ComponentInstance:
         except Exception:
             return False
 
-    #
-    # Mount Component to DOM
-    #
     def mount_to(self, parent_selector: str = "body"):
         sel = parent_selector
         if not sel.startswith("#") and not sel.startswith(".") and sel != "body":
@@ -257,9 +224,6 @@ class ComponentInstance:
             except Exception as e:
                 kernel.log("error", f"on_mount error: {e}")
 
-    #
-    # Replace old DOM with new rendered DOM
-    #
     def _apply_rendered(self, new_elem: Element):
         if self._mounted_child is None:
             nid = new_elem._build()
@@ -267,7 +231,6 @@ class ComponentInstance:
             self._mounted_child = new_elem
             return
 
-        # keyed diff path
         if (
             isinstance(self._mounted_child, Element)
             and isinstance(new_elem, Element)
@@ -317,7 +280,6 @@ class ComponentInstance:
 
             return
 
-        # full replace
         old = self._mounted_child
         old_id = old.node_id
 
@@ -336,9 +298,6 @@ class ComponentInstance:
         kernel.dom.append(self._container_id, new_id)
         self._mounted_child = new_elem
 
-    #
-    # Unmount Component
-    #
     def unmount(self):
         for fn in self._cleanup_callbacks:
             try:
@@ -361,9 +320,6 @@ class ComponentInstance:
         self._is_mounted = False
 
 
-#
-# @component decorator
-#
 def component(fn: Callable[..., Any]) -> Callable[..., ComponentInstance]:
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> ComponentInstance:
@@ -385,8 +341,5 @@ def component(fn: Callable[..., Any]) -> Callable[..., ComponentInstance]:
     return wrapper
 
 
-#
-# Manual mount helper
-#
 def render_component(comp_inst: ComponentInstance, selector: str = "body"):
     comp_inst.mount_to(selector)

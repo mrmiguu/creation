@@ -28,51 +28,40 @@ def Link(to: str, *children, **props) -> Element:
     """
     from .router import navigate  # local import to avoid circular
 
-    # Flatten children (Card(...), "Text", tw(...))
     flat = _flatten_children(children)
 
-    # Extract tw() style dicts or other dict children
     final_children = []
     tw_style = {}
 
     for ch in flat:
-        # tw() children are dicts with __tw_style__
         if isinstance(ch, dict) and "__tw_style__" in ch:
             tw_style.update(ch["__tw_style__"])
         else:
             final_children.append(ch)
 
-    # Normalize standard props (class_, data_*, etc.)
     norm = _normalize_props(props)
 
-    # Merge tw style
     if tw_style:
         if "style" in norm and isinstance(norm["style"], dict):
             norm["style"] = {**norm["style"], **tw_style}
         else:
             norm["style"] = tw_style
 
-    # Add the link href (for SEO, middle-click, long press on mobile)
     norm["href"] = to
 
-    # Add the on_click handler
     def _on_click(ev):
-        # prevent default browser navigation
         try:
             ev.preventDefault()
         except Exception:
             pass
 
-        # SPA navigation
         navigate(to)
 
     norm["on_click"] = _on_click
 
-    # Return a standard <a> element
     return a(*final_children, **norm)
 
 
-#  ROUTE REGISTRY
 
 
 class Route:
@@ -116,7 +105,6 @@ class Route:
 ROUTES: list[Route] = []
 
 
-# @page decorator
 
 
 def page(pattern: str):
@@ -146,15 +134,12 @@ class Router:
         self.current_component = None
         self.root_id = None
 
-        # --- 1) Try to use existing <div id="app"> in index.html
         q = kernel.dom.query("#app")
         existing = q.get("value")
 
         if existing:
-            # found existing DOM root
             self.root_id = existing
         else:
-            # --- 2) Fallback: create root if HTML didn't provide it
             res = kernel.dom.create("div", {"id": "app"}, [])
             if not res.get("ok"):
                 raise RuntimeError(f"Failed to create root: {res.get('error')}")
@@ -163,15 +148,12 @@ class Router:
             body_id = kernel.dom.query("body")["value"]
             kernel.dom.append(body_id, self.root_id)
 
-        # --- 3) Listen to popstate
         kernel.location.on_change(self._on_path_change)
 
-        # --- 4) Initial page render
         self._on_path_change()
 
 
 
-    # ROUTE MATCHING
 
     def match_route(self, path: str):
         for route in ROUTES:
@@ -182,7 +164,6 @@ class Router:
 
         return None, None
 
-    # RENDER + UNMOUNT
 
     def _on_path_change(self):
         path = kernel.location.get_path()
@@ -203,11 +184,9 @@ class Router:
 
 
     def _render(self, comp_inst: ComponentInstance, params: dict[str, Any]):
-        # unmount previous route component
         if self.current_component:
             self.current_component.unmount()
 
-        # mount new route component inside the root div
         comp_inst.mount_to("#app")
 
         self.current_component = comp_inst

@@ -7,7 +7,6 @@ Usage:
     node_id = kernel.dom.create("div", {"textContent": "hello"})
     kernel.log("info", "created node %s" % node_id)
 
-    # Register a python callback:
     def on_click(ev):
         print("clicked", ev)
     cb_id = kernel.register_callback(on_click)
@@ -23,9 +22,7 @@ from js import EvolveKernel
 from pyodide.ffi import create_proxy, to_js
 import asyncio
 
-# string callback_proxies and pyfunction in dict , so Garbage collector wont remove them
 _callback_proxies: dict[int, Any] = {}
-# reverse mapping fromm callback ID-->callback Function
 _callback_pyfuncs: dict[int, Callable] = {}
 
 
@@ -41,7 +38,6 @@ def _to_py(js_value: Any) -> Any:
     return js_value
 
 
-# LOGGING
 
 
 def log(level: str, msg: str) -> dict[str, Any]:
@@ -52,10 +48,8 @@ def log(level: str, msg: str) -> dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 
-# DOM WRAPPERS
 
 
-# inside evolve/kernel/kernel.py -- replace the existing _Dom class methods with the code below
 
 
 def _deep_sanitize(v):
@@ -68,7 +62,6 @@ def _deep_sanitize(v):
             try:
                 return v.to_py()
             except Exception:
-                # if to_py fails for some proxy, fallthrough to other checks
                 pass
     except Exception:
         pass
@@ -82,7 +75,6 @@ def _deep_sanitize(v):
     if isinstance(v, (list, tuple)):
         return [_deep_sanitize(i) for i in v]
 
-    # primitives: int, float, str, bool, None, etc.
     return v
 
 
@@ -92,16 +84,12 @@ class _Dom:
         children = children or []
 
         try:
-            # sanitize everything (removes PyProxies by calling to_py())
             safe_props = _deep_sanitize(props)
             safe_children = _deep_sanitize(children)
 
-            # convert to JS native objects (do NOT pass list_converter)
             js_props = to_js(safe_props, dict_converter=dict)
             js_children = to_js(safe_children)
 
-            # (optional debug) - remove once stable
-            # print("[kernel.dom.create] tag:", tag, "props:", safe_props, "children:", safe_children)
 
             res = EvolveKernel.dom.create(tag, js_props, js_children)
             return _to_py(res)
@@ -111,12 +99,9 @@ class _Dom:
     def update(self, nodeID, props=None):
         props = props or {}
         try:
-            # SANITIZE here as well (was missing)
             safe_props = _deep_sanitize(props)
             js_props = to_js(safe_props, dict_converter=dict)
 
-            # (optional debug)
-            # print("[kernel.dom.update] nodeID:", nodeID, "props:", safe_props)
 
             res = EvolveKernel.dom.update(nodeID, js_props)
             return _to_py(res)
@@ -152,12 +137,9 @@ class _Dom:
             return {"ok": False, "error": str(e)}
 
 
-# exposing public interface as kernel.dom.method instead of kernel._DOM.method
-# just making it look good.
 dom = _Dom()
 
 
-# FILE SYSTEM WRAPPERS
 
 
 class _FS:
@@ -181,7 +163,6 @@ class _FS:
 fs = _FS()
 
 
-# NETWORK WRAPPER (ASYNC)
 
 
 class _NET:
@@ -199,7 +180,6 @@ class _NET:
 net = _NET()
 
 
-# LOCATION / HISTORY WRAPPER
 
 
 class _Location:
@@ -238,7 +218,6 @@ class _Location:
 
 location = _Location()
 
-# CALLBACK REGISTRATION
 
 
 def register_callback(py_fun: Callable) -> int:
@@ -249,10 +228,6 @@ def register_callback(py_fun: Callable) -> int:
     if not callable(py_fun):
         raise TypeError("register_callback expects a callable function")
 
-    # create proxy for JS to call python functions
-    # *a- accept Any number of arguments
-    # **k- accept Any number of keyword arguments
-    # then call _call_python_callback function with these arguments
     proxy = create_proxy(lambda *a, **k: _call_python_callback(py_fun, a, k))
 
     try:
@@ -312,8 +287,6 @@ def unregister_callback(cb_id: int) -> dict[str, Any]:
         return {"ok": False, "error": str(e)}
 
 
-# KERNEL FACADE
-# Public interface for accessibility
 
 
 class KernelFacade:

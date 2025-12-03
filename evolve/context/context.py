@@ -1,7 +1,6 @@
 from ..src.html import div
 from typing import Any
 
-# GLOBAL registry of context stacks
 _CONTEXTS = {}
 
 class Context:
@@ -27,7 +26,6 @@ def use_context(ctx: Context) -> Any:
     return stack[-1] if stack else ctx.default
 
 
-#   Provider Wrapper Component  
 
 class ProviderWrapper:
     """
@@ -41,5 +39,4 @@ class ProviderWrapper:
         self.children = children
 
     def __call__(self, props=None):
-        # This behaves like a component: return children
         return div(*self.children)
