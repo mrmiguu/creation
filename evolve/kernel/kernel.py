@@ -248,23 +248,37 @@ def register_callback(py_fun: Callable) -> int:
             pass
         raise e
 
-
 def _call_python_callback(py_fun: Callable, args: tuple, kargs: dict) -> Any:
     """
-    JS --> Python callaback handlers
+    JS --> Python callback handlers.
+    Gracefully handles argument mismatch (e.g., lambda with no params receiving event).
     """
 
     py_args = tuple(_to_py(a) for a in args)
     py_kargs = {k: _to_py(v) for k, v in kargs.items()}
 
     try:
+        # Try calling with provided arguments first
         result = py_fun(*py_args, **py_kargs)
-        if asyncio.iscoroutine(result):
-            asyncio.ensure_future(result)
-        return result
+    except TypeError as te:
+        # If argument mismatch, try calling without arguments
+        # This handles `lambda: ...` style callbacks that don't need event
+        if "positional argument" in str(te) or "takes 0" in str(te):
+            try:
+                result = py_fun()
+            except Exception as e2:
+                log("error", f"callback error:{e2}")
+                return {"ok": False, "error": str(e2)}
+        else:
+            log("error", f"callback error:{te}")
+            return {"ok": False, "error": str(te)}
     except Exception as e:
         log("error", f"callback error:{e}")
         return {"ok": False, "error": str(e)}
+    
+    if asyncio.iscoroutine(result):
+        asyncio.ensure_future(result)
+    return result
 
 
 def unregister_callback(cb_id: int) -> dict[str, Any]:

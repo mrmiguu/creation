@@ -131,9 +131,14 @@ class Element:
             else:
                 final_props["style"] = collected_tw
 
+        # Debug logging
+        kernel.log("info", f"dom._build: tag={self.tag} children_count={len(processed)}")
+        
         res = kernel.dom.create(self.tag, final_props, processed)
         if not res.get("ok"):
-            raise RuntimeError(f"DOM create failed: {res.get('error')}")
+            err = res.get("error")
+            kernel.log("error", f"DOM create failed for {self.tag}: {err}")
+            raise RuntimeError(f"DOM create failed: {err}")
 
         self.node_id = int(res["value"])
 

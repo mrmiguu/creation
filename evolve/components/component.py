@@ -128,7 +128,7 @@ class ComponentInstance:
         if self._accepts_props():
             return self.fn(self.props, *self.children)
         else:
-            return self.fn(*self.children)
+            return self.fn(*self.children, **self.props)
 
     def _render_effect(self):
         if getattr(self, "_is_rendering", False):
@@ -136,10 +136,17 @@ class ComponentInstance:
         self._is_rendering = True
 
         try:
-            if self._is_mounted is False and self._container_id is not None:
+            # Skip rendering if component was unmounted after initial mount
+            # Note: On first render, _is_mounted is False but _container_id is set
+            # We should only skip if we were mounted before and then unmounted
+            if self._is_mounted is False and self._container_id is None:
                 return
 
             push_component(self)
+            
+            # Reset hook indices for this render cycle
+            self._hook_index = 0
+            self._hook_computed_index = 0
 
             try:
                 if isinstance(self.fn, ProviderWrapper):
@@ -155,9 +162,11 @@ class ComponentInstance:
                 else:
                     try:
                         if self._accepts_props():
+                            # Props-style: fn(props_dict, *children)
                             out = self.fn(self.props, *self.children)
                         else:
-                            out = self.fn(*self.children)
+                            # Python-style: fn(*children, **props)
+                            out = self.fn(*self.children, **self.props)
                     except Exception as e:
                         if hasattr(self.fn, "_error_signal"):
                             self.fn._error_signal.set(e)
@@ -188,9 +197,19 @@ class ComponentInstance:
             self._is_rendering = False
 
     def _accepts_props(self) -> bool:
+        """
+        Check if component function expects a 'props' dict as first argument.
+        Only returns True if first parameter is explicitly named 'props'.
+        This allows components with regular args (title, subtitle) to work.
+        """
         try:
             sig = inspect.signature(self.fn)
-            return len(sig.parameters) >= 1
+            params = list(sig.parameters.values())
+            if not params:
+                return False
+            first_param = params[0]
+            # Only treat as props-style if first param is named 'props'
+            return first_param.name == "props"
         except Exception:
             return False
 
@@ -323,19 +342,12 @@ class ComponentInstance:
 def component(fn: Callable[..., Any]) -> Callable[..., ComponentInstance]:
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> ComponentInstance:
-        props = {}
-        children = []
-
-        if kwargs:
-            props = kwargs
-        elif args:
-            first = args[0]
-            if isinstance(first, dict):
-                props = first
-                children = list(args[1:])
-            else:
-                children = list(args)
-
+        # For Python-style components: positional args are children, kwargs are props
+        # This allows: FeatureCard("title", "subtitle", cta_text="Click")
+        # where args become children passed to fn, and kwargs become props
+        props = kwargs if kwargs else {}
+        children = list(args)
+        
         return ComponentInstance(fn, props, children)
 
     return wrapper

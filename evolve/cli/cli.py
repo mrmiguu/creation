@@ -239,14 +239,38 @@ def build_all():
 
 
 
-class SilentHandler(http.server.SimpleHTTPRequestHandler):
+class SPAHandler(http.server.SimpleHTTPRequestHandler):
+    """
+    SPA-aware HTTP handler.
+    Serves index.html for any path that doesn't match a static file.
+    This enables client-side routing to work on refresh/direct navigation.
+    """
+    
     def log_message(self, format, *args):
-        pass
+        pass  # Silent logging
+    
+    def do_GET(self):
+        # Try to serve the requested file
+        path = self.translate_path(self.path)
+        
+        # If path exists as file or directory with index, serve normally
+        if os.path.exists(path):
+            if os.path.isfile(path):
+                return super().do_GET()
+            elif os.path.isdir(path):
+                # Check for index.html in directory
+                index_path = os.path.join(path, "index.html")
+                if os.path.exists(index_path):
+                    return super().do_GET()
+        
+        # For all other paths (SPA routes), serve index.html
+        self.path = "/index.html"
+        return super().do_GET()
 
 
 def serve_dist(host: str = "127.0.0.1", port: int = 3000):
     os.chdir(str(DIST))
-    handler = SilentHandler
+    handler = SPAHandler
     httpd = socketserver.TCPServer((host, port), handler)
     url = f"http://{host}:{port}"
     print(f"[server] serving {DIST} at {url}")

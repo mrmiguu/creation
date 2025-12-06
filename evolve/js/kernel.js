@@ -155,16 +155,30 @@ const EvolveKernel = (function () {
   }
 
   function applyProps(el, props) {
+    // Initialize listener storage if not present
+    if (!el.__evolve_listeners) {
+      el.__evolve_listeners = {};
+    }
+    
     for (const [k, v] of Object.entries(props)) {
       if (k === "style" && typeof v === "object") {
         Object.assign(el.style, v);
       } else if (k.startsWith("on") && typeof v === "string") {
         const eventName = k.slice(2).toLowerCase();
         const cbId = Number(v);
-        el.addEventListener(eventName, (ev) => {
+        
+        // Remove old listener if exists
+        if (el.__evolve_listeners[eventName]) {
+          el.removeEventListener(eventName, el.__evolve_listeners[eventName]);
+        }
+        
+        // Create and store new listener
+        const listener = (ev) => {
           const eventData = { type: ev.type, targetId: findNodeId(el) };
           asyncCall(cbId, [eventData]);
-        });
+        };
+        el.__evolve_listeners[eventName] = listener;
+        el.addEventListener(eventName, listener);
       } else if (k === "textContent") {
         el.textContent = v;
       } else {
