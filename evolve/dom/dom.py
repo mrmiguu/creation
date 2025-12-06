@@ -34,6 +34,12 @@ class Element:
         Convert Python-side values to safe JS primitives.
         Prevents PyProxy leaks & prevents Callables as children.
         """
+        from ..components.component import ComponentInstance
+        
+        # Handle ComponentInstance - render and sanitize the result
+        if isinstance(value, ComponentInstance):
+            rendered = value.render()
+            return self._js_sanitize(rendered)
 
         if callable(value) and not isinstance(value, (Signal, Computed, Element)):
             try:

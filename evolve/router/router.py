@@ -173,14 +173,64 @@ class Router:
         if route is None:
             @component
             def NotFound():
-                return div("404 - Page Not Found")
+                return div(
+                    div(
+                        "404",
+                        style={"fontSize": "4rem", "fontWeight": "bold", "color": "#ef4444"}
+                    ),
+                    div("Page Not Found", style={"fontSize": "1.25rem", "color": "#6b7280"}),
+                    div(
+                        f"The path '{path}' does not exist.",
+                        style={"fontSize": "0.875rem", "color": "#9ca3af", "marginTop": "0.5rem"}
+                    ),
+                    style={
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "alignItems": "center",
+                        "justifyContent": "center",
+                        "height": "100vh",
+                        "fontFamily": "sans-serif"
+                    }
+                )
             self._render(NotFound(), {})
             return
 
-        component_fn = route.component_fn
-        comp_inst = component_fn(params) if params else component_fn()
-
-        self._render(comp_inst, params)
+        try:
+            component_fn = route.component_fn
+            comp_inst = component_fn(params) if params else component_fn()
+            self._render(comp_inst, params)
+        except Exception as e:
+            # Render error page instead of crashing
+            kernel.log("error", f"Route error: {e}")
+            
+            @component
+            def RouteError():
+                return div(
+                    div("⚠️", style={"fontSize": "3rem"}),
+                    div("Something went wrong", style={"fontSize": "1.5rem", "fontWeight": "bold", "color": "#ef4444"}),
+                    div(
+                        str(e),
+                        style={
+                            "fontSize": "0.875rem",
+                            "color": "#6b7280",
+                            "marginTop": "1rem",
+                            "padding": "1rem",
+                            "background": "#f3f4f6",
+                            "borderRadius": "0.5rem",
+                            "maxWidth": "500px",
+                            "wordBreak": "break-word"
+                        }
+                    ),
+                    style={
+                        "display": "flex",
+                        "flexDirection": "column",
+                        "alignItems": "center",
+                        "justifyContent": "center",
+                        "height": "100vh",
+                        "fontFamily": "sans-serif"
+                    }
+                )
+            self._render(RouteError(), {})
 
 
     def _render(self, comp_inst: ComponentInstance, params: dict[str, Any]):

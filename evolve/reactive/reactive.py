@@ -6,13 +6,50 @@ Provides:
 - Computed: derived reactive value
 - effect: side effect that re-runs when dependencies change
 - signal(): hook-style state that persists across component renders
+- batch(): group multiple updates into single re-render
 """
 
 from typing import Any, Callable, List, TypeVar, Generic
+from contextlib import contextmanager
 
 T = TypeVar("T")
 
 _current_effect_stack: List["_Effect"] = []
+
+# Batching system
+_is_batching = False
+_pending_effects: set = set()
+
+
+@contextmanager
+def batch():
+    """
+    Batch multiple signal updates into a single re-render.
+    
+    Example:
+        with batch():
+            count.set(count() + 1)
+            name.set("New name")
+            items.set([...])
+        # Only ONE re-render happens here
+    """
+    global _is_batching, _pending_effects
+    
+    was_batching = _is_batching
+    _is_batching = True
+    
+    try:
+        yield
+    finally:
+        _is_batching = was_batching
+        
+        # If we're the outermost batch, flush pending effects
+        if not _is_batching and _pending_effects:
+            effects_to_run = list(_pending_effects)
+            _pending_effects.clear()
+            
+            for eff in effects_to_run:
+                eff.run()
 
 
 class _Effect:
@@ -37,6 +74,15 @@ class _Effect:
         finally:
             _current_effect_stack.pop()
             self._is_running = False
+    
+    def schedule(self):
+        """Schedule effect to run (immediate or batched)."""
+        global _is_batching, _pending_effects
+        
+        if _is_batching:
+            _pending_effects.add(self)
+        else:
+            self.run()
 
     def add_dependency(self, sig: "Signal"):
         self.dependencies.add(sig)
@@ -63,10 +109,10 @@ class Signal(Generic[T]):
             self._notify()
 
     def _notify(self):
-        # Clone to avoid modification during iteration
+        # Schedule effects (respects batching)
         for sub in list(self._subscribers):
             if isinstance(sub, _Effect):
-                sub.run()
+                sub.schedule()
 
         # Notify manual subs (used by dom.py for prop bindings)
         for fn in self._manual_subs.values():

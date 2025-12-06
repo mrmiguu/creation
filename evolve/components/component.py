@@ -256,6 +256,8 @@ class ComponentInstance:
             and isinstance(self._mounted_child.children, list)
             and isinstance(new_elem.children, list)
         ):
+            from evolve.diff.keyed import _patch_element
+            
             def _ensure_list(lst):
                 out = []
                 for ch in lst:
@@ -265,15 +267,23 @@ class ComponentInstance:
                         out.append(_ensure_element(ch))
                 return out
 
-            old_list = _ensure_list(self._mounted_child.children)
-            new_list = _ensure_list(new_elem.children)
-
-            new_order = reconcile(self._container_id, old_list, new_list)
-            self._mounted_child.children = new_order
-
-            if getattr(self._mounted_child, "tag", None) != getattr(
-                new_elem, "tag", None
-            ):
+            # If same tag, patch the root element and reconcile children
+            if getattr(self._mounted_child, "tag", None) == getattr(new_elem, "tag", None):
+                # Patch root element (updates props, styles, etc.)
+                _patch_element(self._mounted_child, new_elem)
+                
+                # Reconcile children using mounted_child's node_id as parent
+                old_list = _ensure_list(self._mounted_child.children)
+                new_list = _ensure_list(new_elem.children)
+                
+                # Use the MOUNTED element's node_id, not the container
+                parent_id = new_elem.node_id  # _patch_element transferred node_id to new_elem
+                new_order = reconcile(parent_id, old_list, new_list)
+                new_elem.children = new_order
+                
+                self._mounted_child = new_elem
+            else:
+                # Tag changed - full replace
                 old = self._mounted_child
                 old_id = old.node_id
                 try:
@@ -290,12 +300,6 @@ class ComponentInstance:
                 new_id = new_elem._build()
                 kernel.dom.append(self._container_id, new_id)
                 self._mounted_child = new_elem
-            else:
-                try:
-                    if getattr(new_elem, "props", None):
-                        kernel.dom.update(self._mounted_child.node_id, new_elem.props)
-                except Exception:
-                    pass
 
             return
 
