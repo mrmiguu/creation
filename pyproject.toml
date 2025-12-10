@@ -1,22 +1,20 @@
 [project]
-name = "evolve"
-version = "0.1.0"
+name = "evolve-web"
+version = "0.1.0a2"
+
 description = "A Python-first UI framework that runs in the browser using Pyodide."
 readme = "README.md"
 authors = [
     { name = "Parag Ghatage", email = "parag.dev2025@gmail.com" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 
-dependencies = [
-    
-]
+dependencies = []
 
 [project.scripts]
 evolve = "evolve.cli.cli:main"
 
-# Include JS, WASM, and Python assets inside the wheel!
 [tool.setuptools.package-data]
 "evolve" = [
     "js/*.js",
@@ -27,11 +25,6 @@ evolve = "evolve.cli.cli:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["evolve*"]
-
-[tool.uv.workspace]
-members = [
-    "tmp/test",
-]
 
 [build-system]
 requires = ["setuptools>=65", "wheel"]

@@ -43,7 +43,7 @@ It features a **radical 2KB JavaScript micro-kernel** that handles DOM operation
 Requires Python 3.11+.
 
 ```bash
-pip install evolve
+pip install evolve-web
 ````
 
 -----
