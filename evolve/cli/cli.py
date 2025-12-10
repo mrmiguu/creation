@@ -260,12 +260,30 @@ class SPAHandler(http.server.SimpleHTTPRequestHandler):
         if not file_path.exists() and not "." in path.split("/")[-1]:
             self.path = "/index.html"
         
-        return super().do_GET()
+        try:
+            return super().do_GET()
+        except BrokenPipeError:
+            pass  # Client disconnected, ignore
     
     def log_message(self, format, *args):
-        # Quieter logging
-        if args[1] != "200":
-            print(f"[server] {args[0]} {args[1]}")
+        # Suppress noisy 404s for source maps, favicons, DevTools files
+        path = args[0] if args else ""
+        status = args[1] if len(args) > 1 else ""
+        
+        # Files we don't care about 404s for
+        ignored = (".map", "favicon.ico", ".well-known", "chrome-devtools")
+        if status == "404" and any(x in path for x in ignored):
+            return
+        
+        # Only log non-200 status
+        if status != "200":
+            print(f"[server] {path} {status}")
+    
+    def handle(self):
+        try:
+            super().handle()
+        except BrokenPipeError:
+            pass  # Suppress broken pipe errors
 
 
 def serve_dist(host: str = "127.0.0.1", port: int = 3000):
@@ -273,7 +291,7 @@ def serve_dist(host: str = "127.0.0.1", port: int = 3000):
     handler = SPAHandler
     httpd = socketserver.TCPServer((host, port), handler)
     url = f"http://{host}:{port}"
-    print(f"[server] Serving at {url}")
+    print(f"[server] Dev server running at {url}")
     webbrowser.open(url)
     try:
         httpd.serve_forever()
