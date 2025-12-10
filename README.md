@@ -50,7 +50,7 @@ pip install evolve
 
 ##  Quick Start
 
-Get a reactive app running in seconds using the CLI.
+Get a reactive app running in seconds.
 
 ### 1\. Initialize a Project
 
@@ -58,6 +58,8 @@ Get a reactive app running in seconds using the CLI.
 evolve init my-app
 cd my-app
 ```
+
+This creates a simple `app.py` with example routes.
 
 ### 2\. Run the Dev Server
 
@@ -73,15 +75,13 @@ Visit `http://localhost:3000` to see your app.
 evolve build
 ```
 
-This compiles your Python code and assets into the `dist/` folder, ready for static hosting.
+This compiles your app into `.evolve/dist/`, ready for static hosting.
 
 -----
 
 ##  The "Hello World" Component
 
-Evolve uses a functional component syntax inspired by React but powered by Python.
-
-`pages/home.py`:
+Evolve uses a FastAPI-style decorator syntax. Create an `app.py` anywhere:
 
 ```python
 from evolve.router.router import page
@@ -93,15 +93,20 @@ def Home():
     # Reactive state (Signals)
     count = signal(0)
 
-    def increment():
+    def increment(ev=None):
         count.set(count() + 1)
 
     return div(
         h1("Welcome to Evolve 🧬"),
-        p(f"Current count is: {count()}"),
-        button("Increment", on_click=lambda: increment()),
-        style={"text-align": "center", "font-family": "sans-serif"}
+        p(lambda: f"Count: {count()}"),  # Reactive text
+        button("Increment", on_click=increment),
+        style={"textAlign": "center", "fontFamily": "sans-serif"}
     )
+```
+
+Run it:
+```bash
+evolve run app.py
 ```
 
 -----
@@ -118,8 +123,8 @@ from evolve.reactive.reactive import signal, computed
 count = signal(0)
 double = computed(lambda: count() * 2)
 
-# Only this text node updates in the DOM
-span(f"Double is: {double()}") 
+# Use lambda for reactive text that updates automatically
+span(lambda: f"Double is: {double()}") 
 ```
 
 ### 2\. Built-in Routing
