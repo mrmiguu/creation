@@ -62,6 +62,20 @@ class ComponentInstance:
         self._container_id: int | None = None
 
         self._is_rendering: bool = False
+        
+        # Pre-initialize hook storage to avoid hasattr() checks during renders
+        self._hook_signals: list = []
+        self._hook_computeds: list = []
+        self._hook_effects: list = []
+        self._hook_memos: list = []
+        self._hook_refs: list = []
+        
+        # Hook indices (reset each render cycle)
+        self._hook_index = 0
+        self._hook_computed_index = 0
+        self._hook_effect_index = 0
+        self._hook_memo_index = 0
+        self._hook_ref_index = 0
 
     def render(self) -> Any:
         """
@@ -144,9 +158,12 @@ class ComponentInstance:
 
             push_component(self)
             
-            # Reset hook indices for this render cycle
+            # Reset ALL hook indices for this render cycle
             self._hook_index = 0
             self._hook_computed_index = 0
+            self._hook_effect_index = 0
+            self._hook_memo_index = 0
+            self._hook_ref_index = 0
 
             try:
                 if isinstance(self.fn, ProviderWrapper):
@@ -199,17 +216,19 @@ class ComponentInstance:
     def _accepts_props(self) -> bool:
         """
         Check if component function expects a 'props' dict as first argument.
-        Only returns True if first parameter is explicitly named 'props'.
-        This allows components with regular args (title, subtitle) to work.
+        Uses cached value from @component decorator when available.
         """
+        # Use cached value if available (set by @component decorator)
+        if hasattr(self, "_cached_accepts_props"):
+            return self._cached_accepts_props
+        
+        # Fallback for non-decorated components (expensive, but rare)
         try:
             sig = inspect.signature(self.fn)
             params = list(sig.parameters.values())
             if not params:
                 return False
-            first_param = params[0]
-            # Only treat as props-style if first param is named 'props'
-            return first_param.name == "props"
+            return params[0].name == "props"
         except Exception:
             return False
 
@@ -344,6 +363,14 @@ class ComponentInstance:
 
 
 def component(fn: Callable[..., Any]) -> Callable[..., ComponentInstance]:
+    # Cache signature check at decoration time (ONCE per component definition)
+    try:
+        sig = inspect.signature(fn)
+        params = list(sig.parameters.values())
+        accepts_props = bool(params and params[0].name == "props")
+    except Exception:
+        accepts_props = False
+    
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> ComponentInstance:
         # For Python-style components: positional args are children, kwargs are props
@@ -352,7 +379,9 @@ def component(fn: Callable[..., Any]) -> Callable[..., ComponentInstance]:
         props = kwargs if kwargs else {}
         children = list(args)
         
-        return ComponentInstance(fn, props, children)
+        inst = ComponentInstance(fn, props, children)
+        inst._cached_accepts_props = accepts_props  # Use cached value
+        return inst
 
     return wrapper
 

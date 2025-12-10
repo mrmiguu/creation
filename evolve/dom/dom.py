@@ -26,20 +26,24 @@ class Element:
         self._subscriptions: list[
             tuple[Signal | Computed, int]
         ] = []  # (signal, sub_id)
+        self._callback_ids: list[int] = []  # Track registered callback IDs for cleanup
         self._mounted: bool = False
         self.key = props.pop("key", None)
 
-    def _js_sanitize(self, value):
+    def _js_sanitize(self, value, create_reactive=False):
         """
         Convert Python-side values to safe JS primitives.
         Prevents PyProxy leaks & prevents Callables as children.
+        
+        Args:
+            create_reactive: If True, Signal/Computed children become reactive spans
         """
         from ..components.component import ComponentInstance
         
         # Handle ComponentInstance - render and sanitize the result
         if isinstance(value, ComponentInstance):
             rendered = value.render()
-            return self._js_sanitize(rendered)
+            return self._js_sanitize(rendered, create_reactive)
 
         if callable(value) and not isinstance(value, (Signal, Computed, Element)):
             try:
@@ -48,6 +52,9 @@ class Element:
                 pass
 
         if isinstance(value, (Signal, Computed)):
+            if create_reactive:
+                # Create a reactive text span that updates when signal changes
+                return self._create_signal_child(value)
             return value()
 
         if isinstance(value, Element):
@@ -59,11 +66,11 @@ class Element:
         if isinstance(value, dict):
             out = {}
             for k, v in value.items():
-                out[k] = self._js_sanitize(v)
+                out[k] = self._js_sanitize(v, create_reactive)
             return out
 
         if isinstance(value, (list, tuple)):
-            return [self._js_sanitize(v) for v in value]
+            return [self._js_sanitize(v, create_reactive) for v in value]
 
         return value
 
@@ -100,7 +107,8 @@ class Element:
         collected_tw = {}
 
         for child in self.children:
-            san = self._js_sanitize(child)
+            # Use create_reactive=True to make Signal children reactive
+            san = self._js_sanitize(child, create_reactive=True)
 
             if isinstance(san, dict) and "__tw_style__" in san:
                 collected_tw.update(san["__tw_style__"])
@@ -121,6 +129,7 @@ class Element:
 
             if key.startswith("on") and callable(value):
                 cb_id = kernel.register_callback(value)
+                self._callback_ids.append(cb_id)  # Track for cleanup
                 final_props[key] = str(cb_id)
                 continue
 
@@ -137,9 +146,6 @@ class Element:
             else:
                 final_props["style"] = collected_tw
 
-        # Debug logging
-        kernel.log("info", f"dom._build: tag={self.tag} children_count={len(processed)}")
-        
         res = kernel.dom.create(self.tag, final_props, processed)
         if not res.get("ok"):
             err = res.get("error")
@@ -158,9 +164,16 @@ class Element:
     def unmount(self):
         if not self._mounted:
             return
+        # Clean up signal subscriptions
         for sig, sid in self._subscriptions:
             sig.unsubscribe(sid)
         self._subscriptions.clear()
+        
+        # Clean up registered callbacks to prevent memory leaks
+        for cb_id in self._callback_ids:
+            kernel.unregister_callback(cb_id)
+        self._callback_ids.clear()
+        
         self._mounted = False
 
 

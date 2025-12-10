@@ -28,12 +28,9 @@ def set_timeout(callback: Callable[[], Any], delay_ms: int) -> int:
     timer_id = _next_timer_id
     _next_timer_id += 1
     
-    # Create proxy to prevent garbage collection
-    proxy = create_proxy(callback)
-    
-    # Store reference
+    # Store reference before creating proxy
     _timers[timer_id] = {
-        "proxy": proxy,
+        "proxy": None,
         "js_id": None,
         "type": "timeout"
     }
@@ -44,9 +41,11 @@ def set_timeout(callback: Callable[[], Any], delay_ms: int) -> int:
         finally:
             # Cleanup after execution
             if timer_id in _timers:
-                _timers[timer_id]["proxy"].destroy()
+                if _timers[timer_id]["proxy"]:
+                    _timers[timer_id]["proxy"].destroy()
                 del _timers[timer_id]
     
+    # Create single proxy for the wrapped function
     wrapped_proxy = create_proxy(wrapped)
     _timers[timer_id]["proxy"] = wrapped_proxy
     

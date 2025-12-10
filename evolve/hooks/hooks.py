@@ -39,11 +39,7 @@ def use_effect(fn: Callable[[], Optional[Callable]], deps: Optional[List[Any]] =
     """
     comp = current_component()
     
-    # Initialize effect storage
-    if not hasattr(comp, "_hook_effects"):
-        comp._hook_effects = []
-        comp._hook_effect_index = 0
-    
+    # Hook storage is pre-initialized in ComponentInstance.__init__
     idx = comp._hook_effect_index
     comp._hook_effect_index += 1
     
@@ -121,10 +117,7 @@ def use_memo(fn: Callable[[], T], deps: List[Any]) -> T:
     """
     comp = current_component()
     
-    if not hasattr(comp, "_hook_memos"):
-        comp._hook_memos = []
-        comp._hook_memo_index = 0
-    
+    # Hook storage is pre-initialized in ComponentInstance.__init__
     idx = comp._hook_memo_index
     comp._hook_memo_index += 1
     
@@ -194,10 +187,7 @@ def use_ref(initial: Any = None) -> Ref:
     """
     comp = current_component()
     
-    if not hasattr(comp, "_hook_refs"):
-        comp._hook_refs = []
-        comp._hook_ref_index = 0
-    
+    # Hook storage is pre-initialized in ComponentInstance.__init__
     idx = comp._hook_ref_index
     comp._hook_ref_index += 1
     

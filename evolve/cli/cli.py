@@ -17,8 +17,8 @@ from pathlib import Path
 from typing import List
 
 ROOT = Path.cwd()
-EOLVE_DIR = ROOT / ".evolve"
-DIST = EOLVE_DIR / "dist"
+EVOLVE_DIR = ROOT / ".evolve"
+DIST = EVOLVE_DIR / "dist"
 PAGES = ROOT / "pages"
 COMPONENTS = ROOT / "components"
 PUBLIC = ROOT / "public"

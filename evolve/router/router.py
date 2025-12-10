@@ -26,8 +26,6 @@ def Link(to: str, *children, **props) -> Element:
 
     Behaves like <a>, but prevents default navigation and uses router.navigate().
     """
-    from .router import navigate  # local import to avoid circular
-
     flat = _flatten_children(children)
 
     final_children = []

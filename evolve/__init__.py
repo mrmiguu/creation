@@ -15,17 +15,32 @@ in Pyodide, not at CLI time.
 
 __version__ = "0.1.0"
 
-# Only export version at module level
-# All other exports are available via explicit imports:
-#   from evolve.reactive.reactive import signal, computed, effect, batch
-#   from evolve.components.component import component
-#   from evolve.router.router import page, Link, navigate
-#   from evolve.kernel.timers import set_timeout, set_interval
-#   from evolve.store.store import create_store
-#   from evolve.hooks.hooks import use_effect, use_memo, use_ref
-#   from evolve.src.html import tw, div, span, button, ...
-
-__all__ = ["__version__"]
+# Public API exports for IDE autocompletion and discoverability
+__all__ = [
+    # Version
+    "__version__",
+    # Reactive primitives
+    "signal", "computed", "effect", "batch", "Signal", "Computed",
+    # Components
+    "component",
+    # Routing
+    "page", "Link", "navigate",
+    # Timers
+    "set_timeout", "set_interval", "clear_timeout", "clear_interval",
+    # Hooks
+    "use_effect", "use_memo", "use_ref", "use_callback",
+    # Lifecycle
+    "on_mount", "on_cleanup",
+    # HTML elements
+    "tw", "div", "span", "p", "button", "input", "a", 
+    "h1", "h2", "h3", "h4", "h5", "h6",
+    # Store
+    "create_store", "init_store", "get_store",
+    # Context
+    "create_context", "use_context",
+    # Error handling
+    "ErrorBoundary",
+]
 
 
 def __getattr__(name):

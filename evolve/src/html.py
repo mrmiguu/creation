@@ -296,8 +296,7 @@ def _tw_to_style(classes: str) -> dict[str, str]:
 
 def tw(classes: str) -> dict[str, Any]:
     """Return a special marker dict for tw styles."""
-    if ":" in classes:
-        pass
+    # Note: Pseudo-classes like hover: are not yet supported
     return {"__tw_style__": _tw_to_style(classes)}
 
 

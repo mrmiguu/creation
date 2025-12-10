@@ -180,11 +180,7 @@ def signal(initial_value: T) -> Signal[T]:
     
     comp = _CURRENT_COMPONENT_STACK[-1]
     
-    # Initialize hook state storage on component if not present
-    if not hasattr(comp, "_hook_signals"):
-        comp._hook_signals = []
-        comp._hook_index = 0
-    
+    # Hook storage is pre-initialized in ComponentInstance.__init__
     idx = comp._hook_index
     comp._hook_index += 1
     
@@ -209,10 +205,7 @@ def computed(fn: Callable[[], T]) -> Computed[T]:
     
     comp = _CURRENT_COMPONENT_STACK[-1]
     
-    if not hasattr(comp, "_hook_computeds"):
-        comp._hook_computeds = []
-        comp._hook_computed_index = 0
-    
+    # Hook storage is pre-initialized in ComponentInstance.__init__
     idx = comp._hook_computed_index
     comp._hook_computed_index += 1
     

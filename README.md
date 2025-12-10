@@ -8,7 +8,7 @@
       <img src="https://img.shields.io/badge/pypi-v0.1.0-blue?style=flat-square&logo=pypi&logoColor=white" alt="PyPI Version" />
     </a>
     <a href="#">
-      <img src="https://img.shields.io/badge/python-3.14+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python Version" />
+      <img src="https://img.shields.io/badge/python-3.11+-yellow?style=flat-square&logo=python&logoColor=white" alt="Python Version" />
     </a>
     <a href="LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License" />
@@ -40,7 +40,7 @@ It features a **radical 2KB JavaScript micro-kernel** that handles DOM operation
 
 ##  Installation
 
-Requires Python 3.14+.
+Requires Python 3.11+.
 
 ```bash
 pip install evolve

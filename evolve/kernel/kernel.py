@@ -57,6 +57,11 @@ def _deep_sanitize(v):
     Convert PyProxies to plain Python values (via to_py()) and recursively
     sanitize dicts/lists so that to_js receives only normal Python primitives/containers.
     """
+    # Fast path for common primitives - no processing needed
+    if v is None or isinstance(v, (str, int, float, bool)):
+        return v
+    
+    # Handle PyProxy objects
     try:
         if hasattr(v, "to_py"):
             try:

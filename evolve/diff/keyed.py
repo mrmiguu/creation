@@ -18,10 +18,14 @@ def reconcile(parent_id: int, old: List[Element], new: List[Element]):
     """
     
     # 1. Map old keys to elements and track unkeyed
+    # Also track current positions to avoid unnecessary DOM moves
     old_keyed = {}
     old_unkeyed = []
+    old_positions = {}  # node_id -> current index
     
-    for el in old:
+    for i, el in enumerate(old):
+        if el.node_id is not None:
+            old_positions[el.node_id] = i
         if el.key is not None:
             old_keyed[el.key] = el
         else:
@@ -55,14 +59,11 @@ def reconcile(parent_id: int, old: List[Element], new: List[Element]):
             _patch_element(matched, new_el)
             new_children_elements.append(new_el)
             
-            # Ensure DOM order
-            # If the matched node is not at the current index in the DOM, move it.
-            # But the DOM might be messy.
-            # Simple approach: we rely on insert_at moving existing nodes?
-            # EvolveKernel insertAt usually moves if exists.
-            
+            # Only move if position changed (optimization)
             if matched.node_id is not None:
-                 kernel.dom.insert_at(parent_id, matched.node_id, i)
+                old_pos = old_positions.get(matched.node_id, -1)
+                if old_pos != i:
+                    kernel.dom.insert_at(parent_id, matched.node_id, i)
                  
         else:
             # New element
@@ -107,7 +108,7 @@ def _patch_element(old: Element, new: Element):
     new.node_id = old.node_id
     new._mounted = True
     
-    # 2. Unmount old to clear subscriptions
+    # 2. Unmount old to clear subscriptions and callbacks
     # We do NOT remove from DOM, just stop reactive tracking
     try:
         old.unmount()
@@ -122,7 +123,8 @@ def _patch_element(old: Element, new: Element):
     collected_tw = {}
     
     for child in new.children:
-        san = new._js_sanitize(child)
+        # Use create_reactive=True for signal children
+        san = new._js_sanitize(child, create_reactive=True)
         
         if isinstance(san, dict) and "__tw_style__" in san:
             collected_tw.update(san["__tw_style__"])
@@ -143,8 +145,9 @@ def _patch_element(old: Element, new: Element):
     for key, value in new.props.items():
         # Event Handlers
         if key.startswith("on") and callable(value):
-            # Register new callback
+            # Register new callback and track for cleanup
             cb_id = kernel.register_callback(value)
+            new._callback_ids.append(cb_id)
             final_props[key] = str(cb_id)
             continue
             
@@ -166,8 +169,7 @@ def _patch_element(old: Element, new: Element):
     # 4. Apply Updates to DOM
     if new.node_id is not None:
         # Check if all children are text primitives (strings only)
-        # Note: integers in processed_children are likely node IDs from Element children
-        # so we only consider strings as text content
+        # Note: integers in processed_children are node IDs from Element children
         text_children = [c for c in processed_children if isinstance(c, str)]
         non_text_children = [c for c in processed_children if not isinstance(c, str) and c is not None]
         
@@ -178,81 +180,16 @@ def _patch_element(old: Element, new: Element):
         
         kernel.dom.update(new.node_id, final_props)
         
-    # 5. Bind New Subscriptions (Signals)
-    # We must replicate the signal binding logic from _build
-    # Bind Prop Signals
+    # 5. Bind New Signal Props for reactivity
     for key, value in new.props.items():
          if isinstance(value, (Signal, Computed)):
              new._bind_signal_prop(key, value)
-             
-    # Notes: We don't handle signal children here because they are usually
-    # handled at the child list level. But Element._create_signal_child
-    # is called during build?
-    # Wait, Element._build calls _js_sanitize, which resolves signals!
-    # If a child is a signal, _js_sanitize(child) returns value().
-    # So processed_children has values.
-    # The subscription for CHILD signals happens... where?
-    # Ah, dom.py _build doesn't seem to subscribe to child signals directly?
-    # Checking dom.py again:
-    # _js_sanitize calls val() on signals.
-    # So it snapshots the value.
-    # If a child is a signal, Element._build just renders the current value.
-    # IT DOES NOT SUBSCRIBE?
-    # Wait, `dom.py` line 64: `_create_signal_child`.
-    # Who calls this? Searching `dom.py`...
-    # It is NOT called in the file! 
-    # That means Signal children in Evolve might be static or broken in current dom.py?
-    # Or I missed where it's used.
-    # The `_js_sanitize` at line 44 just calls value().
-    # So `_build` just gets the string.
-    # This implies Reactivity for children list only works if the LIST itself is a signal?
-    # OR if the child is a Component that uses signals.
-    # If `dom.py` is broken for signal children, I shouldn't try to fix it here unless I'm sure.
-    # But for patching, we just rely on whatever `_js_sanitize` does.
     
     # 6. Reconcile Children (Recursion)
-    # The `processed_children` we calculated above are safe JS primitives/dicts.
-    # BUT `reconcile` expects `List[Element]`.
-    # We need to know which children are Elements to recurse into.
-    # new.children contains the raw children.
-    # We need to reconcile `old.children` vs `new.children`.
-    # But wait, `old.children` might contain wrappers (if it was built by component).
-    # If `_patch_element` is called, `old` and `new` are Elements.
-    # Their children might be Elements or primitives.
-    
-    # Logic:
-    # Filter out Elements from children lists and reconcile them?
-    # But mixed content (text, Element, text) is hard to reconcile if we skip text.
-    # The `reconcile` signature I wrote expects `List[Element]`.
-    # Existing `component.py` wraps everything in Elements before calling reconcile.
-    # So if we are here, logic in `component.py` ensures we deal with lists of Elements.
-    # BUT `_patch_element` might be dealing with an internal Element (not the container's child entry).
-    # If `new` is a standard Element (e.g. div), its children might be mixed.
-    # If we recurse `reconcile`, we must ensure they are Elements.
-    
+    # Filter Element children and reconcile them
     old_children_elements = [c for c in old.children if isinstance(c, Element)]
     new_children_elements = [c for c in new.children if isinstance(c, Element)]
     
-    # If we have Elements, reconcile them.
-    # Note: This crude filtering breaks structure if mixed with text.
-    # Example: [text1, div1] -> [text2, div1].
-    # If text changed, we need to update it.
-    # But `kernel.dom` doesn't give us handles to text nodes easily.
-    # This is a limitation of current Evolve.
-    # We will assume for now that if we have Elements, we reconcile them.
-    # For text content, `kernel.dom.create` (which was called for `new`'s build originally) would rely on `processed`.
-    # `kernel.dom.update` does NOT update children structure (add/remove text nodes).
-    # If the structure of children changed (e.g. text changed), the parent 'update' might not catch it?
-    # `Element` implementation of children is: pass to create.
-    # `Element` has no method to update children text.
-    
-    # IMPORTANT FIX:
-    # If the Element has mixed children that are NOT Elements (e.g. text), `kernel.dom.update` won't update them.
-    # We might need to re-render the whole element if children are primitives and changed?
-    # Or `kernel` needs `setText`?
-    # As a fallback, if we detect change in primitives, we might want to replace the whole node.
-    # But checking equality is hard.
-    # For now, we only recursively reconcile ELEMENTS.
-    
     if old_children_elements or new_children_elements:
         reconcile(new.node_id, old_children_elements, new_children_elements)
+
