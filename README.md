@@ -1,8 +1,7 @@
 
 <div align="center">
-  <h1>🧬 Evolve</h1>
+  <h1>🌍 Creation</h1>
   <p><strong>The Python-Native Frontend Framework</strong></p>
-  <p><em> v1 coming soon! Evolve is actively evolving - polishing the reactive engine & browser kernel before final release.</em></p>
   <p>
     <a href="https://pypi.org/project/evolve/">
       <img src="https://img.shields.io/badge/pypi-v0.1.0-blue?style=flat-square&logo=pypi&logoColor=white" alt="PyPI Version" />
