@@ -28,9 +28,9 @@ def batch():
     
     Example:
         with batch():
-            count.set(count() + 1)
-            name.set("New name")
-            items.set([...])
+            count(count() + 1)
+            name("New name")
+            items([...])
         # Only ONE re-render happens here
     """
     global _is_batching, _pending_effects
@@ -95,8 +95,13 @@ class Signal(Generic[T]):
         self._manual_subs = {}  # id -> fn
         self._next_id = 0
 
-    def __call__(self) -> T:
-        # Dependency tracking
+    def __call__(self, new_value: T = None, _sentinel: object = None) -> T:
+        # If called with an argument, set the value
+        if new_value is not None or _sentinel is not None:
+            self.set(new_value)
+            return self._value
+
+        # Otherwise, read the value (with dependency tracking)
         if _current_effect_stack:
             eff = _current_effect_stack[-1]
             eff.add_dependency(self)

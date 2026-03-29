@@ -330,7 +330,7 @@ def Home():
     count = signal(0)
     
     def increment(ev=None):
-        count.set(count() + 1)
+        count(count() + 1)
     
     return div(
         h1("🚀 Welcome to Evolve!"),

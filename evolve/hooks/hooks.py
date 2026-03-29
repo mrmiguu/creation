@@ -219,7 +219,7 @@ def use_callback(fn: Callable, deps: List[Any]) -> Callable:
             
             # Same function reference unless count changes
             handle_click = use_callback(
-                lambda: count.set(count() + 1),
+                lambda: count(count() + 1),
                 [count()]
             )
             

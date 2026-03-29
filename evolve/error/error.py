@@ -16,7 +16,7 @@ class ErrorBoundaryWrapper:
 
     def reset(self):
         """Reset error state."""
-        self._error_signal.set(None)
+        self._error_signal(None, _sentinel=True)
 
     def __call__(self, props=None):
         err = self._error_signal()
@@ -28,7 +28,7 @@ class ErrorBoundaryWrapper:
         try:
             return div(*self.children)
         except Exception as e:
-            self._error_signal.set(e)
+            self._error_signal(e)
             if callable(self.on_error):
                 try:
                     self.on_error(e)

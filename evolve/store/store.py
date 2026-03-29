@@ -57,7 +57,7 @@ class Store(Generic[T]):
             # Dynamically add new keys
             self._signals[key] = Signal(value)
         else:
-            self._signals[key].set(value)
+            self._signals[key](value)
     
     def update(self, key: str, updater: Callable[[Any], Any]):
         """

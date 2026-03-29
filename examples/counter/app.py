@@ -123,18 +123,18 @@ def Home():
     
     # ========== Event Handlers ==========
     def increment(ev=None):
-        count.set(count() + 1)
-        
+        count(count() + 1)
+
     def decrement(ev=None):
         if count() > 0:
-            count.set(count() - 1)
-            
+            count(count() - 1)
+
     def reset_count(ev=None):
-        count.set(0)
-        
+        count(0)
+
     def set_tab(tab_name):
         def handler(ev=None):
-            active_tab.set(tab_name)
+            active_tab(tab_name)
         return handler
     
     def add_todo(ev=None):
@@ -142,8 +142,8 @@ def Home():
         if text.strip():
             current = todos()
             new_id = max(t["id"] for t in current) + 1 if current else 1
-            todos.set([*current, {"id": new_id, "text": text, "done": False}])
-            new_todo_text.set("")
+            todos([*current, {"id": new_id, "text": text, "done": False}])
+            new_todo_text("")
             
     def toggle_todo(todo_id):
         def handler(ev=None):
@@ -152,21 +152,21 @@ def Home():
                 {**t, "done": not t["done"]} if t["id"] == todo_id else t
                 for t in current
             ]
-            todos.set(updated)
+            todos(updated)
         return handler
-    
+
     def delete_todo(todo_id):
         def handler(ev=None):
-            todos.set([t for t in todos() if t["id"] != todo_id])
+            todos([t for t in todos() if t["id"] != todo_id])
         return handler
-    
+
     def clear_notifications(ev=None):
-        notifications.set(0)
-    
+        notifications(0)
+
     def on_todo_input(ev):
         try:
             val = ev.get("target", {}).get("value", "")
-            new_todo_text.set(val)
+            new_todo_text(val)
         except Exception:
             pass
     

@@ -186,7 +186,7 @@ class ComponentInstance:
                             out = self.fn(*self.children, **self.props)
                     except Exception as e:
                         if hasattr(self.fn, "_error_signal"):
-                            self.fn._error_signal.set(e)
+                            self.fn._error_signal(e)
                             out = self.fn.fallback(e)
                         else:
                             raise
