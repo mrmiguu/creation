@@ -3,7 +3,7 @@
   <h1>🌍 Creation</h1>
   <p><strong>The Python-Native Frontend Framework</strong></p>
   <p>
-    <a href="https://pypi.org/project/creation-web/">
+    <a href="https://pypi.org/project/creation/">
       <img src="https://img.shields.io/badge/pypi-v0.1.0-blue?style=flat-square&logo=pypi&logoColor=white" alt="PyPI Version" />
     </a>
     <a href="#">
@@ -42,7 +42,7 @@ It features a **radical 2KB JavaScript micro-kernel** that handles DOM operation
 Requires Python 3.11+.
 
 ```bash
-pip install creation-web
+pip install creation
 ````
 
 -----

@@ -1,5 +1,5 @@
 [project]
-name = "creation-web"
+name = "creation"
 version = "0.1.0a2"
 
 description = "A Python-first UI framework that runs in the browser using Pyodide."
