@@ -1,37 +1,37 @@
-// Evolve loader - FINAL DEBUG BUILD
+// Creation loader - FINAL DEBUG BUILD
 (function (global) {
 
   // ------------------------------
   // PREVENT MULTIPLE BOOTS
   // ------------------------------
-  if (global.__evolve_booted__) {
-    console.log("[Evolve] Duplicate evolve.js load ignored");
+  if (global.__creation_booted__) {
+    console.log("[Creation] Duplicate creation.js load ignored");
     return;
   }
-  global.__evolve_booted__ = true;
+  global.__creation_booted__ = true;
 
-  const E = (global.Evolve = global.Evolve || {});
+  const E = (global.Creation = global.Creation || {});
   E.debug = true;
 
   const DEFAULT_PYODIDE_BASE = "/pyodide/";
   const DEFAULT_APP_URL = "/app.py";
-  const ENGINE_ZIP = "/evolve.zip";
+  const ENGINE_ZIP = "/creation.zip";
 
   const log = (...msg) => {
-    if (E.debug) console.log("[Evolve]", ...msg);
+    if (E.debug) console.log("[Creation]", ...msg);
   };
-  const fail = (...msg) => console.error("[Evolve ERROR]", ...msg);
+  const fail = (...msg) => console.error("[Creation ERROR]", ...msg);
 
   // ------------------------------------------------------------
-  // Wait until window.EvolveKernel is available
+  // Wait until window.CreationKernel is available
   // ------------------------------------------------------------
   async function waitForKernel() {
     log("Waiting for kernel...");
-    while (!global.EvolveKernel) {
+    while (!global.CreationKernel) {
       await new Promise(r => setTimeout(r, 10));
     }
     log("Kernel detected");
-    return global.EvolveKernel;
+    return global.CreationKernel;
   }
 
   // ------------------------------------------------------------
@@ -68,17 +68,17 @@
   }
 
   // ------------------------------------------------------------
-  // Load evolve.zip into Pyodide FS
+  // Load creation.zip into Pyodide FS
   // ------------------------------------------------------------
   async function loadEngineZip(pyodide) {
-    log("Fetching evolve.zip...");
+    log("Fetching creation.zip...");
 
     const r = await fetch(ENGINE_ZIP);
-    if (!r.ok) throw new Error("Failed to fetch evolve.zip");
+    if (!r.ok) throw new Error("Failed to fetch creation.zip");
 
     const buf = await r.arrayBuffer();
 
-    log("Unpacking evolve.zip...");
+    log("Unpacking creation.zip...");
     pyodide.runPython(`import os; os.chdir('/')`);
     pyodide.unpackArchive(buf, "zip");
 
@@ -86,7 +86,7 @@
 
     log("sys.path =", pyodide.runPython("import sys; sys.path"));
     log("root files =", pyodide.runPython("import os; os.listdir('/')"));
-    log("evolve exists =", pyodide.runPython("import os; 'evolve' in os.listdir('/')"));
+    log("creation exists =", pyodide.runPython("import os; 'creation' in os.listdir('/')"));
   }
 
   // ------------------------------------------------------------
@@ -115,13 +115,13 @@
   E.start = async function start(options = {}) {
 
     // extra safety
-    if (global.__evolve_started__) {
-      console.log("[Evolve] start() already executed — skipping");
+    if (global.__creation_started__) {
+      console.log("[Creation] start() already executed — skipping");
       return;
     }
-    global.__evolve_started__ = true;
+    global.__creation_started__ = true;
 
-    log("Starting Evolve…");
+    log("Starting Creation…");
 
     const pyodideBase = options.pyodideBase || DEFAULT_PYODIDE_BASE;
     const appUrl = options.appUrl || DEFAULT_APP_URL;
@@ -140,7 +140,7 @@
 
     log("Registering JS kernel module inside Python");
     pyodide.registerJsModule("kernel", kernel);
-    pyodide.registerJsModule("evolve_js", {
+    pyodide.registerJsModule("creation_js", {
       log: (...a) => console.log("[Python→JS]", ...a),
     });
 
@@ -159,7 +159,7 @@
       }
     }
 
-    log("Evolve fully started!");
+    log("Creation fully started!");
   };
 
 })(window);

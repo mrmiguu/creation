@@ -1,5 +1,5 @@
 """
-Evolve Framework Showcase - Complex Demo Page
+Creation Framework Showcase - Complex Demo Page
 
 Demonstrates all framework features:
 - Reactive signals
@@ -10,10 +10,10 @@ Demonstrates all framework features:
 - Conditional rendering
 """
 
-from evolve.src.html import div, span, button, h1, h2, h3, p, header, main, input, a, section, nav, footer, ul, li, article
-from evolve.reactive.reactive import signal, computed
-from evolve.components.component import component
-from evolve.router.router import page
+from creation.src.html import div, span, button, h1, h2, h3, p, header, main, input, a, section, nav, footer, ul, li, article
+from creation.reactive.reactive import signal, computed
+from creation.components.component import component
+from creation.router.router import page
 
 
 # ============================================================================
@@ -391,7 +391,7 @@ def Home():
                     # About
                     div(
                         h3("About", style={"marginBottom": "0.5rem"}),
-                        p("Evolve Framework v0.1.0", style={"margin": "0", "color": "rgba(255,255,255,0.6)"}),
+                        p("Creation Framework v0.1.0", style={"margin": "0", "color": "rgba(255,255,255,0.6)"}),
                         p("A Python-native reactive UI framework for the browser.", style={"margin": "0.5rem 0 0", "fontSize": "0.875rem", "color": "rgba(255,255,255,0.4)"}),
                         div(
                             Badge("MIT License", variant="success"),
@@ -417,7 +417,7 @@ def Home():
                 # Logo
                 div(
                     span("⚡", style={"fontSize": "1.75rem"}),
-                    span("Evolve", style={
+                    span("Creation", style={
                         "fontSize": "1.5rem", "fontWeight": "700", "marginLeft": "0.5rem",
                         "background": "linear-gradient(135deg, #6366f1, #06b6d4)",
                         "WebkitBackgroundClip": "text", "WebkitTextFillColor": "transparent"
@@ -491,7 +491,7 @@ def Home():
                     }
                 ),
                 p(
-                    "A comprehensive demonstration of Evolve's capabilities",
+                    "A comprehensive demonstration of Creation's capabilities",
                     style={"color": "rgba(255,255,255,0.6)", "fontSize": "1.125rem"}
                 ),
                 style={"textAlign": "center", "marginBottom": "2rem"}
@@ -508,7 +508,7 @@ def Home():
         # Footer
         footer(
             p(
-                "Built with ⚡ Evolve • Python-Native Browser Framework",
+                "Built with ⚡ Creation • Python-Native Browser Framework",
                 style={"textAlign": "center", "color": "rgba(255,255,255,0.4)", "fontSize": "0.875rem"}
             ),
             style={"padding": "2rem", "borderTop": "1px solid rgba(255,255,255,0.1)"}

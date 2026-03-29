@@ -1,7 +1,7 @@
-// Minimal Evolve Kernel - exposes APIs to WASM / Python.
-// Attached to window.EvolveKernel
+// Minimal Creation Kernel - exposes APIs to WASM / Python.
+// Attached to window.CreationKernel
 
-const EvolveKernel = (function () {
+const CreationKernel = (function () {
   // internal node registry (maps nodeId -> DOM node)
   const nodes = new Map();
   let nextNodeId = 1;
@@ -44,7 +44,7 @@ const EvolveKernel = (function () {
       }
 
       const tnode = document.createTextNode(text);
-      tnode.__evolve_id = nodeId;
+      tnode.__creation_id = nodeId;
       nodes.set(nodeId, tnode);
 
       return { ok: true, value: nodeId };
@@ -81,7 +81,7 @@ const EvolveKernel = (function () {
 
       const id = genNodeId();
       nodes.set(id, el);
-      el.__evolve_id = id;
+      el.__creation_id = id;
 
       for (const child of children) {
         if (typeof child === "number") {
@@ -91,7 +91,7 @@ const EvolveKernel = (function () {
           // register string children as text nodes
           const tid = genNodeId();
           const textNode = document.createTextNode(String(child));
-          textNode.__evolve_id = tid;
+          textNode.__creation_id = tid;
           nodes.set(tid, textNode);
           el.appendChild(textNode);
         }
@@ -146,7 +146,7 @@ const EvolveKernel = (function () {
         index >= 0 && index < children.length ? children[index] : null;
 
       parent.insertBefore(child, refNode);
-      child.__evolve_parent = parentId;
+      child.__creation_parent = parentId;
 
       return { ok: true };
     } catch (e) {
@@ -156,8 +156,8 @@ const EvolveKernel = (function () {
 
   function applyProps(el, props) {
     // Initialize listener storage if not present
-    if (!el.__evolve_listeners) {
-      el.__evolve_listeners = {};
+    if (!el.__creation_listeners) {
+      el.__creation_listeners = {};
     }
     
     for (const [k, v] of Object.entries(props)) {
@@ -168,8 +168,8 @@ const EvolveKernel = (function () {
         const cbId = Number(v);
         
         // Remove old listener if exists
-        if (el.__evolve_listeners[eventName]) {
-          el.removeEventListener(eventName, el.__evolve_listeners[eventName]);
+        if (el.__creation_listeners[eventName]) {
+          el.removeEventListener(eventName, el.__creation_listeners[eventName]);
         }
         
         // Create and store new listener
@@ -177,7 +177,7 @@ const EvolveKernel = (function () {
           const eventData = { type: ev.type, targetId: findNodeId(el) };
           asyncCall(cbId, [eventData]);
         };
-        el.__evolve_listeners[eventName] = listener;
+        el.__creation_listeners[eventName] = listener;
         el.addEventListener(eventName, listener);
       } else if (k === "textContent") {
         el.textContent = v;
@@ -188,7 +188,7 @@ const EvolveKernel = (function () {
   }
 
   function findNodeId(node) {
-    return node.__evolve_id || null;
+    return node.__creation_id || null;
   }
 
   function update(nodeId, props = {}) {
@@ -209,7 +209,7 @@ const EvolveKernel = (function () {
     if (!parent || !child) return { ok: false, error: "invalid-node" };
 
     parent.appendChild(child);
-    child.__evolve_parent = parentId;
+    child.__creation_parent = parentId;
 
     return { ok: true };
   }
@@ -222,7 +222,7 @@ const EvolveKernel = (function () {
       (function () {
         const nid = genNodeId();
         nodes.set(nid, el);
-        el.__evolve_id = nid;
+        el.__creation_id = nid;
         return nid;
       })();
     return { ok: true, value: id };
@@ -341,5 +341,5 @@ const EvolveKernel = (function () {
   };
 })();
 
-window.EvolveKernel = EvolveKernel;
+window.CreationKernel = CreationKernel;
 console.log("[Kernel] initialized");

@@ -1,5 +1,5 @@
 """
-Keyed list reconciliation for Evolve.
+Keyed list reconciliation for Creation.
 
 Reconciles old children vs new children using keys.
 Only minimal DOM operations are executed.

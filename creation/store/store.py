@@ -1,5 +1,5 @@
 """
-Global State Store for Evolve.
+Global State Store for Creation.
 
 Provides a simple, signal-based global state management system.
 Similar to Zustand or Redux Toolkit's createSlice.

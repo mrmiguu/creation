@@ -1,5 +1,5 @@
 """
-Browser-compatible Timer API for Evolve.
+Browser-compatible Timer API for Creation.
 
 Provides set_timeout, set_interval, and their clear functions.
 Uses js.setTimeout/setInterval under the hood with proper proxy handling.

@@ -1,5 +1,5 @@
 """
-React-like Hooks for Evolve.
+React-like Hooks for Creation.
 
 Provides common hook patterns for component lifecycle and optimization:
 - use_effect: Side effects with cleanup

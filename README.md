@@ -3,7 +3,7 @@
   <h1>🌍 Creation</h1>
   <p><strong>The Python-Native Frontend Framework</strong></p>
   <p>
-    <a href="https://pypi.org/project/evolve/">
+    <a href="https://pypi.org/project/creation-web/">
       <img src="https://img.shields.io/badge/pypi-v0.1.0-blue?style=flat-square&logo=pypi&logoColor=white" alt="PyPI Version" />
     </a>
     <a href="#">
@@ -31,7 +31,7 @@
 
 
 
-**Evolve** is a paradigm shift for Python web development. Unlike traditional frameworks that render HTML on the server (Django, Flask) or wrap heavy JS runtimes, Evolve runs **natively in the browser** via WebAssembly.
+**Creation** is a paradigm shift for Python web development. Unlike traditional frameworks that render HTML on the server (Django, Flask) or wrap heavy JS runtimes, Creation runs **natively in the browser** via WebAssembly.
 
 It features a **radical 2KB JavaScript micro-kernel** that handles DOM operations, while your application logic, state management, and component rendering happen entirely in Python.
 
@@ -42,7 +42,7 @@ It features a **radical 2KB JavaScript micro-kernel** that handles DOM operation
 Requires Python 3.11+.
 
 ```bash
-pip install evolve-web
+pip install creation-web
 ````
 
 -----
@@ -54,7 +54,7 @@ Get a reactive app running in seconds.
 ### 1\. Initialize a Project
 
 ```bash
-evolve init my-app
+creation init my-app
 cd my-app
 ```
 
@@ -63,7 +63,7 @@ This creates a simple `app.py` with example routes.
 ### 2\. Run the Dev Server
 
 ```bash
-evolve run
+creation run
 ```
 
 Visit `http://localhost:3000` to see your app.
@@ -71,21 +71,21 @@ Visit `http://localhost:3000` to see your app.
 ### 3\. Build for Production
 
 ```bash
-evolve build
+creation build
 ```
 
-This compiles your app into `.evolve/dist/`, ready for static hosting.
+This compiles your app into `.creation/dist/`, ready for static hosting.
 
 -----
 
 ##  The "Hello World" Component
 
-Evolve uses a FastAPI-style decorator syntax. Create an `app.py` anywhere:
+Creation uses a FastAPI-style decorator syntax. Create an `app.py` anywhere:
 
 ```python
-from evolve.router.router import page
-from evolve.src.html import div, h1, button, p
-from evolve.reactive.reactive import signal
+from creation.router.router import page
+from creation.src.html import div, h1, button, p
+from creation.reactive.reactive import signal
 
 @page("/")
 def Home():
@@ -96,7 +96,7 @@ def Home():
         count(count() + 1)
 
     return div(
-        h1("Welcome to Evolve 🧬"),
+        h1("Welcome to Creation 🌍"),
         p(lambda: f"Count: {count()}"),  # Reactive text
         button("Increment", on_click=increment),
         style={"textAlign": "center", "fontFamily": "sans-serif"}
@@ -105,7 +105,7 @@ def Home():
 
 Run it:
 ```bash
-evolve run app.py
+creation run app.py
 ```
 
 -----
@@ -114,10 +114,10 @@ evolve run app.py
 
 ### 1\. Fine-Grained Reactivity (Signals)
 
-Evolve doesn't re-render entire components. When a `signal` changes, only the specific text node or attribute bound to it updates.
+Creation doesn't re-render entire components. When a `signal` changes, only the specific text node or attribute bound to it updates.
 
 ```python
-from evolve.reactive.reactive import signal, computed
+from creation.reactive.reactive import signal, computed
 
 count = signal(0)
 double = computed(lambda: count() * 2)
@@ -131,7 +131,7 @@ span(lambda: f"Double is: {double()}")
 A lightweight, history-mode router is included out of the box.
 
 ```python
-from evolve.router.router import page, Link
+from creation.router.router import page, Link
 
 @page("/about")
 def About():
@@ -143,10 +143,10 @@ def About():
 
 ### 3\. Tailwind-Style Styling
 
-Evolve includes a `tw()` utility for rapid styling without leaving Python.
+Creation includes a `tw()` utility for rapid styling without leaving Python.
 
 ```python
-from evolve.src.html import div, tw
+from creation.src.html import div, tw
 
 div("Hello", **tw("text-white bg-blue-500 p-4 rounded-lg flex justify-center"))
 ```
@@ -156,8 +156,8 @@ div("Hello", **tw("text-white bg-blue-500 p-4 rounded-lg flex justify-center"))
 Hook into mount and unmount events for side effects (API calls, subscriptions).
 
 ```python
-from evolve.components.component import component
-from evolve.core.lifecycle import on_mount, on_cleanup
+from creation.components.component import component
+from creation.core.lifecycle import on_mount, on_cleanup
 
 @component
 def Timer():
@@ -170,7 +170,7 @@ def Timer():
 
 ##  Architecture
 
-Evolve bridges the gap between Python and the Browser DOM using a highly efficient architecture:
+Creation bridges the gap between Python and the Browser DOM using a highly efficient architecture:
 
 ```mermaid
 flowchart TD
@@ -200,14 +200,14 @@ flowchart TD
 
 ##  Project Structure
 
-When you run `evolve init`, the following structure is created:
+When you run `creation init`, the following structure is created:
 
 ```text
 my-app/
 ├── components/       # Reusable UI components
 ├── pages/            # Route handlers (@page)
 ├── public/           # Static assets (images, fonts)
-├── evolve.zip        # Packed engine (generated on build)
+├── creation.zip      # Packed engine (generated on build)
 └── app.py            # Entry point (auto-generated)
 ```
 

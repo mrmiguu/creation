@@ -1,8 +1,8 @@
 """
-Python wrapper for the window.EvolveKernel JS object (Pyodide environment).
+Python wrapper for the window.CreationKernel JS object (Pyodide environment).
 
 Usage:
-    from evolve.kernel import kernel
+    from creation.kernel import kernel
 
     node_id = kernel.dom.create("div", {"textContent": "hello"})
     kernel.log("info", "created node %s" % node_id)
@@ -13,12 +13,12 @@ Usage:
     kernel.dom.update(node_id, {"onclick": str(cb_id)})
 
 Notes:
-- This module expects Pyodide (pyodide.create_proxy) and `window.EvolveKernel` to exist.
+- This module expects Pyodide (pyodide.create_proxy) and `window.CreationKernel` to exist.
 - Keep references to callbacks if you plan to unregister later (this module does that for you).
 """
 
 from typing import Any, Callable
-from js import EvolveKernel
+from js import CreationKernel
 from pyodide.ffi import create_proxy, to_js
 import asyncio
 
@@ -42,7 +42,7 @@ def _to_py(js_value: Any) -> Any:
 
 def log(level: str, msg: str) -> dict[str, Any]:
     try:
-        res = EvolveKernel.log(level, msg)
+        res = CreationKernel.log(level, msg)
         return _to_py(res)
     except Exception as e:
         return {"ok": False, "error": str(e)}
@@ -96,7 +96,7 @@ class _Dom:
             js_children = to_js(safe_children)
 
 
-            res = EvolveKernel.dom.create(tag, js_props, js_children)
+            res = CreationKernel.dom.create(tag, js_props, js_children)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
@@ -108,35 +108,35 @@ class _Dom:
             js_props = to_js(safe_props, dict_converter=dict)
 
 
-            res = EvolveKernel.dom.update(nodeID, js_props)
+            res = CreationKernel.dom.update(nodeID, js_props)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
     def remove(self, node_id):
         try:
-            res = EvolveKernel.dom.remove(int(node_id))
+            res = CreationKernel.dom.remove(int(node_id))
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
     def insert_at(self, parentID, nodeID, index):
         try:
-            res = EvolveKernel.dom.insertAt(int(parentID), int(nodeID), int(index))
+            res = CreationKernel.dom.insertAt(int(parentID), int(nodeID), int(index))
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
     def append(self, parentID, nodeID):
         try:
-            res = EvolveKernel.dom.append(parentID, nodeID)
+            res = CreationKernel.dom.append(parentID, nodeID)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
     def query(self, selector):
         try:
-            res = EvolveKernel.dom.query(selector)
+            res = CreationKernel.dom.query(selector)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
@@ -151,7 +151,7 @@ class _FS:
     @staticmethod
     def read(path: str) -> dict[str, Any]:
         try:
-            res = EvolveKernel.fs.read(path)
+            res = CreationKernel.fs.read(path)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
@@ -159,7 +159,7 @@ class _FS:
     @staticmethod
     def write(path: str, contents: Any) -> dict[str, Any]:
         try:
-            res = EvolveKernel.fs.write(path, contents)
+            res = CreationKernel.fs.write(path, contents)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
@@ -176,7 +176,7 @@ class _NET:
         options = options or {}
 
         try:
-            res = await EvolveKernel.net.fetch(url, options)
+            res = await CreationKernel.net.fetch(url, options)
             return _to_py(res)
         except Exception as e:
             return {"ok": False, "error": str(e)}
@@ -191,21 +191,21 @@ class _Location:
     @staticmethod
     def get_path() -> str:
         try:
-            return _to_py(EvolveKernel.location.getPath())
+            return _to_py(CreationKernel.location.getPath())
         except Exception:
             return "/"
 
     @staticmethod
     def push(path: str) -> dict[str, Any]:
         try:
-            return _to_py(EvolveKernel.location.push(path))
+            return _to_py(CreationKernel.location.push(path))
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
     @staticmethod
     def replace(path: str) -> dict[str, Any]:
         try:
-            return _to_py(EvolveKernel.location.replace(path))
+            return _to_py(CreationKernel.location.replace(path))
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
@@ -216,7 +216,7 @@ class _Location:
         """
         try:
             cb_id = register_callback(py_callback)
-            return _to_py(EvolveKernel.location.onChange(cb_id))
+            return _to_py(CreationKernel.location.onChange(cb_id))
         except Exception as e:
             return {"ok": False, "error": str(e)}
 
@@ -236,7 +236,7 @@ def register_callback(py_fun: Callable) -> int:
     proxy = create_proxy(lambda *a, **k: _call_python_callback(py_fun, a, k))
 
     try:
-        res = EvolveKernel.registerCallback(proxy)
+        res = CreationKernel.registerCallback(proxy)
         res_py = _to_py(res)
         if not res_py.get("ok", False):
             proxy.destroy()
@@ -300,7 +300,7 @@ def unregister_callback(cb_id: int) -> dict[str, Any]:
             pass
 
     try:
-        res = EvolveKernel.unregisterCallback(cb_id)
+        res = CreationKernel.unregisterCallback(cb_id)
         return _to_py(res)
     except Exception as e:
         return {"ok": False, "error": str(e)}

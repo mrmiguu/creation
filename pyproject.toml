@@ -1,5 +1,5 @@
 [project]
-name = "evolve-web"
+name = "creation-web"
 version = "0.1.0a2"
 
 description = "A Python-first UI framework that runs in the browser using Pyodide."
@@ -13,10 +13,10 @@ license = { text = "MIT" }
 dependencies = []
 
 [project.scripts]
-evolve = "evolve.cli.cli:main"
+creation = "creation.cli.cli:main"
 
 [tool.setuptools.package-data]
-"evolve" = [
+"creation" = [
     "js/*.js",
     "assets/pyodide/*",
     "assets/pyodide/python/*",
@@ -24,7 +24,7 @@ evolve = "evolve.cli.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["evolve*"]
+include = ["creation*"]
 
 [build-system]
 requires = ["setuptools>=65", "wheel"]

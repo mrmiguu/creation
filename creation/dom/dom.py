@@ -1,5 +1,5 @@
 """
-DOM builder layer for Evolve.
+DOM builder layer for Creation.
 Fully reactive: supports Signal & Computed values in
 - children
 - props (like textContent, value, etc.)

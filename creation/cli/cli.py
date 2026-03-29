@@ -1,10 +1,10 @@
 """
-Evolve CLI - FastAPI-style route discovery.
+Creation CLI - FastAPI-style route discovery.
 
 Usage:
-  evolve init <project>     Create new project with app.py
-  evolve build [target]     Build for production
-  evolve run [target]       Run development server
+  creation init <project>     Create new project with app.py
+  creation build [target]     Build for production
+  creation run [target]       Run development server
 
 Target can be:
   - A Python file (app.py)
@@ -22,11 +22,11 @@ from pathlib import Path
 from typing import List, Optional
 
 ROOT = Path.cwd()
-EVOLVE_DIR = ROOT / ".evolve"
-DIST = EVOLVE_DIR / "dist"
+CREATION_DIR = ROOT / ".creation"
+DIST = CREATION_DIR / "dist"
 
 PKG_ROOT = Path(__file__).resolve().parent.parent
-ENGINE_DIR = (PKG_ROOT / "evolve") if (PKG_ROOT / "evolve").exists() else PKG_ROOT
+ENGINE_DIR = (PKG_ROOT / "creation") if (PKG_ROOT / "creation").exists() else PKG_ROOT
 JS_DIR = PKG_ROOT / "js"
 PYODIDE_DIR = PKG_ROOT / "assets" / "pyodide"
 
@@ -35,18 +35,18 @@ INDEX_HTML = """<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Evolve App</title>
+    <title>Creation App</title>
   </head>
   <body>
     <div id="app"></div>
 
     <script src="/pyodide/pyodide.js"></script>
     <script src="/kernel.js"></script>
-    <script src="/evolve.js"></script>
+    <script src="/creation.js"></script>
 
     <script>
-      // Start the full Evolve engine (loads evolve.zip, app.py, kernel, etc.)
-      Evolve.start();
+      // Start the full Creation engine (loads creation.zip, app.py, kernel, etc.)
+      Creation.start();
     </script>
 
   </body>
@@ -80,10 +80,10 @@ def discover_py_files(target: Optional[Path] = None) -> List[Path]:
         return []
     
     if target.is_dir():
-        # Find all .py files, excluding __pycache__, .evolve, etc.
+        # Find all .py files, excluding __pycache__, .creation, etc.
         files = []
         for p in target.rglob("*.py"):
-            # Skip hidden dirs, __pycache__, .evolve, venv, etc.
+            # Skip hidden dirs, __pycache__, .creation, venv, etc.
             parts = p.relative_to(target).parts
             skip = False
             for part in parts:
@@ -121,12 +121,12 @@ def generate_app_py(target: Optional[Path] = None):
             imports.append(f"# {f.name}")
     
     content = "\n".join([
-        "# Auto-generated app entry for Evolve",
+        "# Auto-generated app entry for Creation",
         "# Routes are registered via @page decorator when modules import",
         "",
         *imports,
         "",
-        "from evolve.src.app import start",
+        "from creation.src.app import start",
         "",
         "start()",
     ])
@@ -136,7 +136,7 @@ def generate_app_py(target: Optional[Path] = None):
 
 
 def copy_engine():
-    """Copy the evolve Python package into dist so Pyodide can import it."""
+    """Copy the creation Python package into dist so Pyodide can import it."""
     engine_src = ENGINE_DIR
     engine_dst = DIST / engine_src.name
 
@@ -152,17 +152,17 @@ def copy_engine():
 
 
 def copy_assets():
-    """Copy evolve.js + kernel.js + pyodide folder from evolve package → dist"""
-    evolve_js = JS_DIR / "evolve.js"
+    """Copy creation.js + kernel.js + pyodide folder from creation package → dist"""
+    creation_js = JS_DIR / "creation.js"
     kernel_js = JS_DIR / "kernel.js"
 
-    if not evolve_js.exists() or not kernel_js.exists():
-        print("[error] Missing evolve.js or kernel.js inside evolve/js/")
+    if not creation_js.exists() or not kernel_js.exists():
+        print("[error] Missing creation.js or kernel.js inside creation/js/")
         return
 
-    shutil.copy2(evolve_js, DIST / "evolve.js")
+    shutil.copy2(creation_js, DIST / "creation.js")
     shutil.copy2(kernel_js, DIST / "kernel.js")
-    print("[build] Copied evolve.js + kernel.js")
+    print("[build] Copied creation.js + kernel.js")
 
     if PYODIDE_DIR.exists():
         target_dir = DIST / "pyodide"
@@ -171,7 +171,7 @@ def copy_assets():
         shutil.copytree(PYODIDE_DIR, target_dir)
         print("[build] Copied pyodide runtime")
     else:
-        print("[warning] pyodide/ folder missing inside evolve/assets/")
+        print("[warning] pyodide/ folder missing inside creation/assets/")
 
 
 def copy_user_code(target: Optional[Path] = None):
@@ -211,15 +211,15 @@ def write_index_html():
 
 
 def pack_engine():
-    """Pack engine + project python files into evolve.zip."""
+    """Pack engine + project python files into creation.zip."""
     import zipfile
 
-    target_zip = DIST / "evolve.zip"
+    target_zip = DIST / "creation.zip"
     if target_zip.exists():
         target_zip.unlink()
 
     with zipfile.ZipFile(target_zip, "w", zipfile.ZIP_DEFLATED) as zf:
-        # Pack the engine (evolve package)
+        # Pack the engine (creation package)
         engine_path = DIST / ENGINE_DIR.name
         if engine_path.exists():
             for file in engine_path.rglob("*"):
@@ -234,7 +234,7 @@ def pack_engine():
                 if str(arcname) not in [str(a) for a in zf.namelist()]:
                     zf.write(file, arcname)
 
-    print(f"[build] Packed evolve.zip")
+    print(f"[build] Packed creation.zip")
 
 
 def build_all(target: Optional[Path] = None):
@@ -306,7 +306,7 @@ def serve_dist(host: str = "127.0.0.1", port: int = 3000):
 # ============================================================================
 
 def cmd_init(project_name: str):
-    """Create a new Evolve project with minimal structure."""
+    """Create a new Creation project with minimal structure."""
     target_dir = Path(project_name)
     
     if target_dir.exists():
@@ -317,25 +317,25 @@ def cmd_init(project_name: str):
     
     # Create simple app.py (FastAPI style)
     app_content = '''"""
-My Evolve App
+My Creation App
 """
-from evolve.router.router import page
-from evolve.src.html import div, h1, h2, button, p
-from evolve.reactive.reactive import signal
+from creation.router.router import page
+from creation.src.html import div, h1, h2, button, p
+from creation.reactive.reactive import signal
 
 
 @page("/")
 def Home():
     """Home page with a simple counter."""
     count = signal(0)
-    
+
     def increment(ev=None):
         count(count() + 1)
-    
+
     return div(
-        h1("🚀 Welcome to Evolve!"),
+        h1("🚀 Welcome to Creation!"),
         p("A Python-native reactive UI framework"),
-        
+
         div(
             h2(lambda: f"Count: {count()}"),
             button("+1", on_click=increment, style={
@@ -345,7 +345,7 @@ def Home():
             }),
             style={"marginTop": "2rem"}
         ),
-        
+
         style={
             "fontFamily": "system-ui, sans-serif",
             "padding": "2rem",
@@ -360,7 +360,7 @@ def About():
     """About page."""
     return div(
         h1("About"),
-        p("Built with Evolve - 100% Python in the browser!"),
+        p("Built with Creation - 100% Python in the browser!"),
         style={
             "fontFamily": "system-ui, sans-serif",
             "padding": "2rem"
@@ -378,7 +378,7 @@ def About():
     print(f"       └── public/")
     print(f"\nNext steps:")
     print(f"  cd {project_name}")
-    print(f"  evolve run")
+    print(f"  creation run")
 
 
 def cmd_build(target: Optional[str] = None):
@@ -396,8 +396,8 @@ def cmd_run(target: Optional[str] = None, host: str = "127.0.0.1", port: int = 3
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="evolve",
-        description="Evolve - Python-native web framework"
+        prog="creation",
+        description="Creation - Python-native web framework"
     )
     sub = parser.add_subparsers(dest="cmd")
 

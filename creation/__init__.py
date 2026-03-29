@@ -1,5 +1,5 @@
 """
-Evolve - A Python web framework powered by Pyodide.
+Creation - A Python web framework powered by Pyodide.
 
 Core APIs:
     - signal, computed, effect, batch - Reactive primitives
@@ -94,4 +94,4 @@ def __getattr__(name):
         from .core.lifecycle import on_mount, on_cleanup
         return locals()[name]
     
-    raise AttributeError(f"module 'evolve' has no attribute '{name}'")
+    raise AttributeError(f"module 'creation' has no attribute '{name}'")

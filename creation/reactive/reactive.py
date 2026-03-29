@@ -1,5 +1,5 @@
 """
-Reactive system for Evolve.
+Reactive system for Creation.
 
 Provides:
 - Signal: reactive state container

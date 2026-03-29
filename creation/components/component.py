@@ -1,5 +1,5 @@
 """
-Component system for Evolve.
+Component system for Creation.
 
 Supports:
 - Function components
@@ -275,7 +275,7 @@ class ComponentInstance:
             and isinstance(self._mounted_child.children, list)
             and isinstance(new_elem.children, list)
         ):
-            from evolve.diff.keyed import _patch_element
+            from creation.diff.keyed import _patch_element
             
             def _ensure_list(lst):
                 out = []
